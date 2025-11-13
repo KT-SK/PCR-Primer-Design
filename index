@@ -1,0 +1,1709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>DNA Primer Design Tool — Single File</title>
+<meta name="description" content="Offline DNA Primer Design Tool — generate PCR primer pairs with Tm, GC, hairpin, dimer, GC clamp checks, copy/save/export, and more." />
+<style>
+/* =========================
+   THEME & LAYOUT VARIABLES
+   ========================= */
+:root{
+  --bg-primary: rgb(240,248,255); /* very light sky blue */
+  --surface: rgb(255,255,255); /* bright white */
+  --mint: rgb(144,238,144);
+  --mint-weak: rgba(144,238,144,0.08);
+  --cyan: rgb(0,255,255);
+  --cyan-weak: rgba(0,255,255,0.06);
+  --lav: rgb(230,230,250);
+  --lav-weak: rgba(230,230,250,0.06);
+  --peach: rgb(255,239,213);
+  --peach-weak: rgba(255,239,213,0.06);
+  --sunny: rgb(255,255,153);
+  --text-primary: rgba(45,55,75,1);
+  --text-secondary: rgba(100,115,130,1);
+  --status-green: rgba(50,205,50,1);
+  --status-yellow: rgba(255,215,0,1);
+  --status-red: rgba(255,127,80,1);
+  --border: rgba(220,230,240,1);
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --radius-card: 18px;
+  --card-padding: 24px;
+  --accent-glow: rgba(0,255,255,0.14);
+  --max-width: 1200px;
+  --ease: cubic-bezier(.2,.9,.2,1);
+  --anim-fast: 300ms;
+  --anim-med: 400ms;
+}
+
+/* ====== Reset & base ====== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, var(--bg-primary) 0%, #f8fdff 100%);
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.6;
+  padding:32px 20px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ====== Container ====== */
+.container{
+  width:100%;
+  max-width:var(--max-width);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:24px;
+}
+
+/* ====== Header ====== */
+.header {
+  background:var(--surface);
+  border-radius: var(--radius-card);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow);
+  border:1px solid var(--border);
+  display:flex;
+  gap:20px;
+  align-items:center;
+  overflow:hidden;
+  transform-origin:center;
+  opacity:0;
+  animation: fadeIn 450ms var(--ease) forwards;
+}
+.title {
+  flex:1;
+}
+.h1 {
+  font-size:42px;
+  font-weight:700;
+  letter-spacing:0.5px;
+  margin:0 0 8px 0;
+  color:var(--text-primary);
+}
+.h2 {
+  margin:0;
+  font-size:14px;
+  color:var(--text-secondary);
+  font-weight:400;
+}
+
+/* ====== Grid layout for main content ====== */
+.main-grid{
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  gap:24px;
+  align-items:start;
+}
+@media (max-width: 1024px){
+  .main-grid{ grid-template-columns: 1fr; }
+}
+
+/* ====== Cards ====== */
+.card{
+  background:var(--surface);
+  border-radius: var(--radius-card);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow);
+  border:1px solid var(--border);
+  overflow:hidden;
+  opacity:0;
+  transform: translateY(8px);
+  animation: fadeUp 420ms var(--ease) forwards;
+}
+.card.delay-1{ animation-delay: 120ms; }
+.card.delay-2{ animation-delay: 240ms; }
+.card.delay-3{ animation-delay: 360ms; }
+
+/* ====== Animations ====== */
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform:none } }
+@keyframes fadeUp { from { opacity:0; transform: translateY(12px) } to { opacity:1; transform:none } }
+@keyframes pulseOnce {
+  0%{ transform:scale(1); opacity:1 }
+  50%{ transform:scale(1.06); opacity:0.9 }
+  100%{ transform:scale(1); opacity:1 }
+}
+@keyframes badgePulse {
+  0%{ transform:scale(1); opacity:1 }
+  50%{ transform:scale(1.06); opacity:0.85 }
+  100%{ transform:scale(1); opacity:1 }
+}
+@keyframes slideInRight { from { transform: translateX(18px); opacity:0 } to { transform:none; opacity:1 } }
+
+.header .logo {
+  width:76px;
+  height:76px;
+  border-radius:12px;
+  background: linear-gradient(135deg, var(--mint), var(--cyan));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: #09303a;
+  font-weight:700;
+  font-size:20px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+/* ====== Input section ====== */
+.input-area{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.textarea {
+  width:100%;
+  min-height:220px;
+  max-height:520px;
+  padding:16px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background: rgba(250,250,255,1);
+  resize:vertical;
+  font-family: "Courier New", monospace;
+  font-size:14px;
+  color: var(--text-primary);
+  outline:none;
+  transition: all 250ms var(--ease);
+  box-shadow: none;
+}
+.textarea:focus{
+  border-color: var(--mint);
+  box-shadow: 0 6px 20px var(--accent-glow);
+  background: rgba(240,255,240,0.9);
+}
+.controls {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.charcount {
+  font-size:13px;
+  color:var(--text-secondary);
+}
+.small-btn{
+  background:linear-gradient(180deg, rgba(255,255,255,1), rgba(245,245,255,1));
+  border:1px solid var(--border);
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  transition: all var(--anim-fast) var(--ease);
+  box-shadow:none;
+}
+.small-btn:hover{ transform:scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,0.06) }
+
+/* ====== Parameter panel ====== */
+.params {
+  display:grid;
+  gap:12px;
+}
+.param-group{
+  border-radius:12px;
+  padding:14px;
+  border:1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,255,0.9));
+  display:grid;
+  gap:12px;
+}
+.param-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+@media (max-width:768px){ .param-grid{ grid-template-columns: 1fr } }
+.param-label{ font-weight:600; color: rgba(70,85,105,1); font-size:14px }
+.param-input{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.number-input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background: rgba(250,250,255,1);
+  outline:none;
+  transition: all 200ms var(--ease);
+}
+.number-input:focus{ box-shadow: 0 6px 18px rgba(173,255,47,0.12); border-color: var(--mint) }
+
+/* slider styling */
+.range-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+input[type="range"]{
+  -webkit-appearance:none;
+  width:100%;
+  height:10px;
+  border-radius:6px;
+  background: linear-gradient(90deg, rgba(144,238,144,0.3), rgba(0,255,255,0.3));
+  outline:none;
+}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;height:18px;border-radius:50%;background:var(--cyan);box-shadow:0 2px 8px rgba(0,0,0,0.12)
+}
+.toggle{
+  width:48px;height:28px;border-radius:16px;background:rgba(230,230,230,0.7);position:relative;cursor:pointer;border:1px solid var(--border);
+}
+.toggle.on{ background: linear-gradient(90deg,var(--mint),var(--cyan)); }
+.toggle .dot{ position:absolute; top:4px; left:4px;width:20px;height:20px;border-radius:50%;background:white; transition: all 250ms var(--ease) }
+.toggle.on .dot{ left:24px }
+
+/* ===== CTA ===== */
+.cta-row{ display:flex; gap:12px; align-items:center; justify-content:flex-start; flex-wrap:wrap }
+.primary-cta{
+  background: linear-gradient(180deg, var(--cyan), #bfffff);
+  color: #003a3a;
+  padding:16px 36px;
+  border-radius:10px;
+  font-weight:600;
+  font-size:16px;
+  border: none;
+  cursor:pointer;
+  box-shadow: 0 8px 28px rgba(0,255,255,0.08);
+  transition: all var(--anim-fast) var(--ease);
+  transform-origin:center;
+  animation: pulseOnce 2s var(--ease) infinite;
+}
+.primary-cta:hover{ transform:scale(1.05); box-shadow: 0 12px 32px rgba(0,0,0,0.08) }
+.primary-cta:active{ transform:scale(0.99) }
+
+/* stop pulsing on focus or after first click */
+.primary-cta.clicked{ animation:none; }
+
+/* ===== Loading overlay ===== */
+.loading {
+  display:none;
+  gap:12px;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  border-radius:10px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(240,255,255,0.95));
+  border: 1px solid var(--border);
+}
+.spinner{
+  width:36px;height:36px;border-radius:50%;border:4px solid rgba(0,0,0,0.06);border-top:4px solid var(--cyan);
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin{ from{ transform:rotate(0deg) } to{ transform:rotate(360deg) } }
+
+/* ===== Results layout ===== */
+.results-grid{
+  display:grid;
+  gap:12px;
+}
+.results-list{
+  display:grid;
+  gap:12px;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width:900px){ .results-list{ grid-template-columns: 1fr } }
+.pair-card{
+  border-radius:12px;
+  padding:16px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,255,0.98));
+  box-shadow: var(--shadow);
+  display:grid;
+  gap:12px;
+  transform: translateY(12px);
+  opacity:0;
+}
+.pair-card.show{ animation: cardIn 420ms var(--ease) forwards; }
+@keyframes cardIn { to { transform:none; opacity:1 } }
+
+.primer-row{ display:flex; gap:12px; align-items:flex-start; }
+.primer-box{ flex:1; padding:12px; border-radius:10px; border:1px solid var(--border) }
+.primer-box.fwd{ background: rgba(240,255,240,1) }
+.primer-box.rev{ background: rgba(240,255,255,1) }
+.seq {
+  font-family: "Courier New", monospace;
+  background: rgba(245,245,255,1);
+  padding:8px;border-radius:8px;display:block;overflow:auto;font-size:13px;
+}
+.meta-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:8px; margin-top:8px; }
+@media (max-width:600px){ .meta-grid{ grid-template-columns: 1fr } }
+.badge{
+  display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px;
+}
+.badge.pass{ background: var(--status-green); color: #043204; }
+.badge.warn{ background: var(--status-yellow); color: #4a3300; }
+.badge.fail{ background: var(--status-red); color: #5a1f00; }
+
+/* warnings list */
+.warnings{ display:grid; gap:8px; margin-top:8px; }
+.warn-item{ background: rgba(255,250,240,1); padding:10px; border-radius:8px; border:1px solid rgba(255,220,200,1); font-size:13px }
+
+/* copy/save/export row */
+.actions-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+.action-btn{ padding:8px 12px; border-radius:8px; border:1px solid var(--border); background: linear-gradient(180deg,#ffffff,#fbfdff); cursor:pointer; font-weight:600; transition: all 220ms var(--ease) }
+.copy-btn{ background: linear-gradient(180deg,var(--cyan), #bffeff); color:#003a3a }
+.copy-btn.copied{ background: var(--status-green); color:#013203 }
+
+/* saved primer modal/list */
+.saved-list{ display:grid; gap:10px; max-height:300px; overflow:auto; padding:6px }
+
+/* footer */
+.footer{
+  padding:16px;border-radius:12px;background:transparent;color:var(--text-secondary);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px
+}
+.footer a{ color:var(--text-secondary); text-decoration:underline; }
+
+/* tooltip */
+.tooltip {
+  position:relative; display:inline-block;
+}
+.tooltip .tip {
+  position:absolute; left:50%; transform:translateX(-50%); bottom:calc(100% + 10px);
+  background: var(--surface); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:12px; color:var(--text-secondary); width:260px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transform-origin:50% 100%; transition: all 200ms var(--ease);
+}
+.tooltip:hover .tip, .tooltip:focus-within .tip { opacity:1; transform: translateX(-50%) translateY(-6px) }
+
+/* inputs icons / small */
+.icon { font-size:18px; margin-right:8px; opacity:0.9; }
+
+/* responsive tweaks */
+@media (max-width: 1280px){ .h1{ font-size:38px } }
+@media (max-width: 600px){
+  body{ padding:18px 12px; }
+  .h1{ font-size:28px }
+  .header{ padding:16px }
+  .primary-cta{ width:100% }
+}
+
+/* small helper */
+.muted{ color:var(--text-secondary); font-size:13px }
+.center{ display:flex; align-items:center; justify-content:center; gap:8px }
+.right{ text-align:right }
+</style>
+</head>
+<body>
+<div class="container" role="main">
+  <!-- HEADER -->
+  <header class="header" aria-label="DNA Primer Design Tool header">
+    <div class="logo" aria-hidden="true">PD</div>
+    <div class="title">
+      <h1 class="h1">DNA Primer Design Tool</h1>
+      <p class="h2">Design PCR primers offline · Tm, GC, hairpin, dimer, GC clamp · Copy, save, export</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div class="muted">Version 1.0 • Single-file</div>
+      <div class="muted">Works offline · Accessible · Responsive</div>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid" role="region" aria-label="Main content area">
+
+    <!-- LEFT: Input & Parameters & CTA -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- INPUT CARD -->
+      <section class="card delay-1" id="inputCard" aria-labelledby="inputHeading">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 id="inputHeading" style="margin:0;font-size:20px;font-weight:700">Target DNA Sequence</h2>
+            <div class="muted" style="margin-top:6px">Paste FASTA or plain DNA sequence (A,T,G,C,N). 100–100000 bp.</div>
+          </div>
+          <div class="center">
+            <button class="small-btn" id="clearSeqBtn" title="Clear sequence">Clear</button>
+            <button class="small-btn" id="exampleBtn" title="Insert example sequence">Insert Example</button>
+          </div>
+        </div>
+
+        <textarea id="dnaInput" class="textarea" placeholder="Paste your DNA sequence here (ATGC...). Example:
+>Example_gene
+ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textarea>
+
+        <div class="controls">
+          <div class="charcount" id="charCount">Length: 0 bp</div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <div id="validationMessage" class="muted" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PARAMS CARD -->
+      <section class="card delay-2" id="paramsCard" aria-labelledby="paramsHeading">
+        <h3 id="paramsHeading" style="margin:0 0 8px 0;font-size:18px;font-weight:700">Design Parameters</h3>
+        <div class="muted" style="margin-bottom:8px">Adjust parameters — live validation will indicate if settings are inconsistent.</div>
+
+        <div class="params">
+
+          <!-- Product size group -->
+          <div class="param-group" style="background:var(--mint-weak)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:600;color:rgba(70,85,105,1)">PCR Product Size (bp)</div>
+              <div class="tooltip" tabindex="0" aria-hidden="false">
+                <span style="font-size:14px;color:var(--text-secondary)">?</span>
+                <div class="tip">Controls the expected amplicon length. Product Size = Reverse Position - Forward Position + 1.</div>
+              </div>
+            </div>
+            <div class="param-grid">
+              <div>
+                <div class="param-label">Minimum (bp)</div>
+                <div class="param-input">
+                  <input type="number" id="minProduct" class="number-input" min="100" max="50000" value="200" />
+                </div>
+                <div class="muted">Min allowed 100</div>
+              </div>
+              <div>
+                <div class="param-label">Maximum (bp)</div>
+                <div class="param-input">
+                  <input type="number" id="maxProduct" class="number-input" min="150" max="50000" value="300" />
+                </div>
+                <div class="muted">Max allowed 50000</div>
+              </div>
+            </div>
+            <div id="productError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
+          </div>
+
+          <!-- Primer length group -->
+          <div class="param-group" style="background:var(--cyan-weak)">
+            <div style="font-weight:600;color:rgba(70,85,105,1)">Primer Length (nt)</div>
+            <div class="param-grid">
+              <div>
+                <div class="param-label">Minimum (nt)</div>
+                <input type="number" id="minPrimerLen" class="number-input" min="15" max="35" value="18" />
+                <div class="muted">Min 15</div>
+              </div>
+              <div>
+                <div class="param-label">Maximum (nt)</div>
+                <input type="number" id="maxPrimerLen" class="number-input" min="15" max="35" value="27" />
+                <div class="muted">Max 35</div>
+              </div>
+            </div>
+            <div id="lengthError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
+          </div>
+
+          <!-- Tm group -->
+          <div class="param-group" style="background:var(--lav-weak)">
+            <div style="font-weight:600;color:rgba(70,85,105,1)">Melting Temperature Tm (°C)</div>
+            <div class="param-grid">
+              <div>
+                <div class="param-label">Optimal Tm</div>
+                <input type="number" id="optTm" class="number-input" min="50" max="72" value="60" />
+                <div class="muted">Range 50–72°C</div>
+              </div>
+              <div>
+                <div class="param-label">Minimum Tm</div>
+                <input type="number" id="minTm" class="number-input" min="45" max="72" value="54" />
+                <div class="muted">Range 45–72°C</div>
+              </div>
+            </div>
+            <div style="margin-top:8px" class="param-grid">
+              <div>
+                <div class="param-label">Maximum Tm</div>
+                <input type="number" id="maxTm" class="number-input" min="45" max="75" value="65" />
+                <div class="muted">Range 45–75°C</div>
+              </div>
+              <div>
+                <div class="param-label">Max Tm Difference (°C)</div>
+                <input type="number" id="maxTmDiff" class="number-input" min="0" max="10" value="4" />
+                <div class="muted">0–10°C</div>
+              </div>
+            </div>
+            <div id="tmError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
+          </div>
+
+          <!-- GC content group -->
+          <div class="param-group" style="background:var(--peach-weak)">
+            <div style="font-weight:600;color:rgba(70,85,105,1)">GC Content (%)</div>
+            <div class="param-grid">
+              <div>
+                <div class="param-label">Minimum (%)</div>
+                <input type="number" id="minGC" class="number-input" min="20" max="80" value="40" />
+                <div class="muted">Range 20–80%</div>
+              </div>
+              <div>
+                <div class="param-label">Maximum (%)</div>
+                <input type="number" id="maxGC" class="number-input" min="20" max="80" value="60" />
+                <div class="muted">Range 20–80%</div>
+              </div>
+            </div>
+            <div id="gcError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
+          </div>
+
+          <!-- other params -->
+          <div class="param-group">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:600;color:rgba(70,85,105,1)">Other Settings</div>
+              <div class="muted">Fine-tune checks</div>
+            </div>
+
+            <div class="param-grid">
+              <div>
+                <div class="param-label">Max Homopolymer Run (nt)</div>
+                <input type="number" id="maxHomopolymer" class="number-input" min="2" max="6" value="3" />
+                <div class="muted">Default 3</div>
+              </div>
+              <div>
+                <div class="param-label">Primer Pairs to Generate</div>
+                <input type="number" id="pairsCount" class="number-input" min="1" max="10" value="3" />
+                <div class="muted">1–10 pairs</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+              <div style="display:flex;gap:8px;align-items:center">
+                <div id="gcClampToggle" class="toggle on" role="switch" aria-checked="true" tabindex="0"><div class="dot"></div></div>
+                <div style="font-weight:600">GC Clamp Requirement</div>
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:center">
+                <div id="secStructToggle" class="toggle on" role="switch" aria-checked="true" tabindex="0"><div class="dot"></div></div>
+                <div style="font-weight:600">Secondary Structure Checks</div>
+              </div>
+
+            </div>
+            <div class="muted" style="margin-top:8px">GC clamp requires both 5' and 3' bases to be G or C when enabled.</div>
+          </div>
+
+          <!-- restriction sites -->
+          <div class="param-group" style="background:var(--lav-weak)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:600;color:rgba(70,85,105,1)">Restriction Site Checker (optional)</div>
+              <div class="muted">Select common sites or add custom</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="GAATTC" checked /> EcoRI GAATTC</label>
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="GGATCC" checked /> BamHI GGATCC</label>
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="AAGCTT" checked /> HindIII AAGCTT</label>
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="GCGGCCGC" /> NotI GCGGCCGC</label>
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="GGTACC" /> KpnI GGTACC</label>
+              <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="resCheck" value="CTGCAG" /> PstI CTGCAG</label>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <input id="customRes" class="number-input" placeholder="Custom site (e.g. TCTAGA)" style="width:180px" />
+              <button class="small-btn" id="addResBtn">Add</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CTA -->
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:12px;align-items:center" class="cta-row">
+            <button id="designBtn" class="primary-cta" title="Design primers">🎯 Design Primers</button>
+            <button id="resetParams" class="small-btn">Reset to defaults</button>
+          </div>
+          <div class="muted">Tip: Start with recommended defaults for best results.</div>
+        </div>
+      </section>
+
+      <!-- collapsible quick tips -->
+      <section class="card delay-3" id="tipsCard" aria-labelledby="tipsHeading">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 id="tipsHeading" style="margin:0;font-size:18px;font-weight:700">Quick Reference & Best Practices</h3>
+          <div class="muted">Click to expand</div>
+        </div>
+        <details style="margin-top:12px">
+          <summary style="cursor:pointer;font-weight:600">Best practices (click to expand)</summary>
+          <div style="margin-top:10px">
+            <ul style="margin:8px 0 0 18px">
+              <li>Primer length 18–27 nt optimal. Avoid extremes.</li>
+              <li>GC content 40–60% ideal for specificity and stable annealing.</li>
+              <li>Tm 54–65°C standard; primers in pair should differ by ≤4°C.</li>
+              <li>Avoid homopolymer runs ≥4; max recommended 3 consecutive identical bases.</li>
+              <li>Use GC clamp (G/C at both 5' and 3') to improve binding.</li>
+              <li>Always BLAST primers against your organism (NCBI Primer BLAST) to verify specificity.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+
+    </div>
+
+    <!-- RIGHT: Results & Saved -->
+    <aside style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Loading / Results Card -->
+      <section class="card" id="resultsCard" aria-labelledby="resultsHeading">
+        <h3 id="resultsHeading" style="margin:0;font-size:18px;font-weight:700">Results</h3>
+        <div id="emptyState" style="margin-top:12px">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-weight:600">No primers designed yet</div>
+            <div class="muted">Paste a DNA sequence and click <strong>Design Primers</strong>. Follow suggestions and save results.</div>
+          </div>
+        </div>
+
+        <div id="loadingBox" class="loading" style="margin-top:12px">
+          <div class="spinner" aria-hidden="true"></div>
+          <div id="loadingText">Designing primers — please wait...</div>
+        </div>
+
+        <div id="resultsArea" class="results-grid" style="margin-top:12px;display:none">
+          <div id="resultsList" class="results-list"></div>
+          <div id="foundMessage" class="muted"></div>
+        </div>
+      </section>
+
+      <!-- Save & Export -->
+      <section class="card" id="saveCard" aria-labelledby="saveHeading">
+        <h3 id="saveHeading" style="margin:0;font-size:18px;font-weight:700">Saved Primers</h3>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button class="small-btn" id="viewSavedBtn">View Saved</button>
+          <button class="small-btn" id="exportAllBtn">Export All</button>
+          <div class="muted" style="margin-left:auto">Stored in browser localStorage</div>
+        </div>
+        <div id="savedList" class="saved-list" style="margin-top:10px"></div>
+      </section>
+
+      <!-- Extra: restriction matches & gradient suggestions -->
+      <section class="card" aria-labelledby="extraHeading">
+        <h3 id="extraHeading" style="margin:0;font-size:18px;font-weight:700">Additional Info</h3>
+        <div style="margin-top:8px">
+          <div id="restrictionSummary" class="muted">Restriction site matches will appear here after design.</div>
+          <div id="gradientSummary" class="muted" style="margin-top:8px">Temperature gradient suggestions will appear with each primer pair.</div>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
+    <div>ℹ Designed for lab use. Validate primer specificity with NCBI Primer BLAST before ordering: <a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/" target="_blank" rel="noopener">NCBI Primer BLAST</a></div>
+    <div class="muted">© PrimerDesignTool • 2025 • v1.0</div>
+  </footer>
+
+</div>
+
+<!-- ==========================
+     JavaScript — All logic
+     ========================== -->
+<script>
+/* =================================================================================
+   DNA Primer Design Tool
+   All JS in single file. No external dependencies.
+   Implements specified formulas and algorithms exactly as requested.
+   ================================================================================= */
+
+(() => {
+  'use strict';
+
+  /* -------------------------
+     Utility & DOM shortcuts
+     ------------------------- */
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const el = (tag, attrs = {}, ...children) => {
+    const e = document.createElement(tag);
+    for (let k in attrs) {
+      if (k === 'class') e.className = attrs[k];
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    for (let c of children) {
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else if (c) e.appendChild(c);
+    }
+    return e;
+  };
+
+  /* -------------------------
+     Elements
+     ------------------------- */
+  const dnaInput = $('#dnaInput');
+  const charCount = $('#charCount');
+  const validationMessage = $('#validationMessage');
+  const clearSeqBtn = $('#clearSeqBtn');
+  const exampleBtn = $('#exampleBtn');
+
+  const minProduct = $('#minProduct');
+  const maxProduct = $('#maxProduct');
+  const minPrimerLen = $('#minPrimerLen');
+  const maxPrimerLen = $('#maxPrimerLen');
+  const optTm = $('#optTm');
+  const minTm = $('#minTm');
+  const maxTm = $('#maxTm');
+  const maxTmDiff = $('#maxTmDiff');
+  const minGC = $('#minGC');
+  const maxGC = $('#maxGC');
+  const maxHomopolymer = $('#maxHomopolymer');
+  const pairsCount = $('#pairsCount');
+  const gcClampToggle = $('#gcClampToggle');
+  const secStructToggle = $('#secStructToggle');
+  const designBtn = $('#designBtn');
+  const resetParams = $('#resetParams');
+  const loadingBox = $('#loadingBox');
+  const loadingText = $('#loadingText');
+  const resultsArea = $('#resultsArea');
+  const resultsList = $('#resultsList');
+  const emptyState = $('#emptyState');
+  const foundMessage = $('#foundMessage');
+  const savedList = $('#savedList');
+  const viewSavedBtn = $('#viewSavedBtn');
+  const exportAllBtn = $('#exportAllBtn');
+  const restrictionSummary = $('#restrictionSummary');
+  const gradientSummary = $('#gradientSummary');
+  const resultsCard = $('#resultsCard');
+
+  /* parameter error elements */
+  const productError = $('#productError');
+  const lengthError = $('#lengthError');
+  const tmError = $('#tmError');
+  const gcError = $('#gcError');
+
+  /* global data */
+  let state = {
+    saved: loadSavedPrimers(),
+    restrictionSites: new Set( Array.from($$('.resCheck:checked')).map((i)=> i.value) ),
+  };
+
+  /* Insert example sequence */
+  exampleBtn.addEventListener('click', () => {
+    const ex = `>Example_gene
+ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGCTAGCTAGCTAACGCGATCGATCGATCGTAGCTAGCTGACTGACTGACTGACTGAC`;
+    dnaInput.value = ex;
+    updateCharCount();
+  });
+
+  clearSeqBtn.addEventListener('click', () => {
+    dnaInput.value = '';
+    updateCharCount();
+    setValidation('');
+  });
+
+  /* parameter toggles */
+  function toggleElement(elNode){
+    elNode.classList.toggle('on');
+    const on = elNode.classList.contains('on');
+    elNode.setAttribute('aria-checked', String(on));
+  }
+  gcClampToggle.addEventListener('click', ()=> toggleElement(gcClampToggle));
+  gcClampToggle.addEventListener('keypress', (e)=> { if (e.key==='Enter') toggleElement(gcClampToggle) });
+  secStructToggle.addEventListener('click', ()=> toggleElement(secStructToggle));
+  secStructToggle.addEventListener('keypress', (e)=> { if (e.key==='Enter') toggleElement(secStructToggle) });
+
+  /* add custom restriction site */
+  $('#addResBtn').addEventListener('click', () => {
+    const v = $('#customRes').value.trim().toUpperCase();
+    if (!v) return;
+    state.restrictionSites.add(v);
+    const ch = el('label', {}, el('input',{type:'checkbox', checked:true, class:'resCheck', value:v}), ' ' + v);
+    $('#customRes').value = '';
+    // append to param group
+    $('.param-group[style*="lav-weak"]').querySelector('div').appendChild(ch);
+    refreshRestrictionCheckboxes();
+  });
+
+  function refreshRestrictionCheckboxes(){
+    state.restrictionSites = new Set(Array.from($$('.resCheck:checked')).map(i=>i.value));
+  }
+  document.addEventListener('change', (e)=> {
+    if (e.target && e.target.classList && e.target.classList.contains('resCheck')) refreshRestrictionCheckboxes();
+  });
+
+  /* params reset */
+  resetParams.addEventListener('click', () => {
+    minProduct.value = 200; maxProduct.value = 300;
+    minPrimerLen.value = 18; maxPrimerLen.value = 27;
+    optTm.value = 60; minTm.value = 54; maxTm.value = 65; maxTmDiff.value = 4;
+    minGC.value = 40; maxGC.value = 60;
+    maxHomopolymer.value = 3;
+    pairsCount.value = 3;
+    if (!gcClampToggle.classList.contains('on')) toggleElement(gcClampToggle);
+    if (!secStructToggle.classList.contains('on')) toggleElement(secStructToggle);
+    setValidation('');
+    productError.style.display = 'none';
+    lengthError.style.display = 'none';
+    tmError.style.display = 'none';
+    gcError.style.display = 'none';
+  });
+
+  /* live character count & validation for DNA input */
+  dnaInput.addEventListener('input', updateCharCount);
+  function updateCharCount(){
+    const raw = dnaInput.value || '';
+    const seq = extractSeq(raw);
+    charCount.textContent = `Length: ${seq.length} bp`;
+    // color coding: green if >100 and <100000
+    const color = seq.length >= 100 && seq.length <= 100000 ? 'var(--status-green)' : seq.length>100000 ? 'var(--status-red)' : 'var(--status-yellow)';
+    charCount.style.color = color;
+    // validation
+    if (seq.length === 0) {
+      setValidation('');
+      return;
+    }
+    if (seq.length < 100) setValidation(`Warning - sequence too short: ${seq.length} bp (minimum 100 bp)`, 'warn');
+    else if (seq.length > 100000) setValidation(`Error - sequence too long: ${seq.length} bp (maximum 100000 bp)`, 'error');
+    else setValidation('');
+  }
+
+  /* validation message setter */
+  function setValidation(msg='', type='ok'){
+    validationMessage.textContent = msg;
+    if (!msg) {
+      validationMessage.style.color = 'var(--text-secondary)';
+      return;
+    }
+    if (type==='warn') validationMessage.style.color = 'var(--status-yellow)';
+    else if (type==='error') validationMessage.style.color = 'var(--status-red)';
+    else validationMessage.style.color = 'var(--status-green)';
+  }
+
+  /* -------------------------
+     Sequence helpers
+     ------------------------- */
+
+  // Extract plain sequence: remove FASTA header lines and whitespace. Uppercase.
+  function extractSeq(raw){
+    if (!raw) return '';
+    // remove FASTA headers: lines starting with >
+    let lines = raw.split(/\r?\n/);
+    lines = lines.filter(l => !l.startsWith('>'));
+    let seq = lines.join('').replace(/\s+/g,'').toUpperCase();
+    // allow A,T,G,C,N only in input sequence for scanning, but candidates require A/T/G/C only
+    return seq;
+  }
+
+  // Valid base check
+  const VALID_BASES = new Set(['A','T','G','C','N']);
+  function checkValidBases(seq){
+    for (let i=0;i<seq.length;i++){
+      if (!VALID_BASES.has(seq[i])) return {ok:false, pos:i+1, char:seq[i]};
+    }
+    return {ok:true};
+  }
+
+  // Complement mapping
+  const complementMap = {A:'T',T:'A',G:'C',C:'G',N:'N'};
+  function complementBase(b){ return complementMap[b] || 'N'; }
+  function reverseComplement(s){
+    // assume uppercase
+    let res = '';
+    for (let i = s.length -1; i>=0; i--){
+      const b = s[i];
+      res += complementBase(b);
+    }
+    return res;
+  }
+
+  /* -------------------------
+     Tm & GC calculations exactly as specified
+     ------------------------- */
+
+  function calcSimpleTm(primer){
+    // For primers shorter than 14 bp
+    let gc = 0, at = 0;
+    for (let c of primer){
+      if (c==='G' || c==='C') gc++;
+      else if (c==='A' || c==='T') at++;
+      else {} // if N present, handle later - but simple formula uses counts of GC and AT
+    }
+    return 4 * gc + 2 * at;
+  }
+
+  function calcNNTm(primer){
+    // For primers 14 bp or longer: Tm = 64.9 + 41 * ((GC count - 16.4) / length)
+    let gc = 0;
+    for (let c of primer){
+      if (c==='G' || c==='C') gc++;
+    }
+    const L = primer.length;
+    return 64.9 + 41 * ((gc - 16.4) / L);
+  }
+
+  function calcTmExact(primer){
+    // choose formula based on length exactly as specified
+    if (primer.length < 14) {
+      return {tm: calcSimpleTm(primer), method: 'Simple'};
+    } else {
+      return {tm: calcNNTm(primer), method: 'NN'};
+    }
+  }
+
+  function calcGCPercent(primer){
+    let gc = 0;
+    for (let c of primer){
+      if (c==='G' || c==='C') gc++;
+    }
+    const pct = ( (gc / primer.length) * 100 );
+    return Math.round(pct*10)/10; // one decimal place
+  }
+
+  /* -------------------------
+     Homopolymer detection exactly as specified
+     ------------------------- */
+  function detectHomopolymers(primer, maxAllowed){
+    // Scan primer character by character. Find consecutive identical bases.
+    const issues = [];
+    const L = primer.length;
+    let i=0;
+    while (i < L){
+      let j = i+1;
+      while (j < L && primer[j] === primer[i]) j++;
+      const runLen = j - i;
+      if (runLen >= maxAllowed){ // equals parameter => warning, exceeds => fail
+        const posStart = i+1; // 1-based
+        const posEnd = j; // 1-based
+        const severity = runLen === maxAllowed ? 'warning' : 'fail';
+        issues.push({base: primer[i], length: runLen, start: posStart, end: posEnd, severity});
+      }
+      i = j;
+    }
+    return issues; // may be empty
+  }
+
+  /* -------------------------
+     Hairpin formation calculation exactly as specified
+     ------------------------- */
+  function hairpinPotential(primer){
+    // Take last 5 bases exactly
+    const L = primer.length;
+    const last5 = primer.slice(Math.max(0, L-5), L).padStart(5, 'N'); // ensure length 5 if primer shorter - but algorithm says last 5 bases exactly as they appear, so for primers <5 we still take whatever present
+    const rc = reverseComplement(last5); // reverse complement of last 5
+    // Search within first 15 bases of primer for this exact reverse complement sequence
+    const searchRegion = primer.slice(0, Math.min(15, primer.length));
+    // Perform approximate match: we search for exact substring match of rc with sliding window of length 5
+    let bestMatch = {matched:0, pos:-1};
+    for (let i=0; i <= searchRegion.length - 1; i++){
+      // we will compare rc length (5) sliding, but if near end maybe partial; still compute matched bases
+      let matched = 0;
+      for (let j=0; j<5; j++){
+        if (i+j >= searchRegion.length) break;
+        if (searchRegion[i+j] === rc[j]) matched++;
+      }
+      if (matched > bestMatch.matched) { bestMatch = {matched, pos: i+1}; }
+      if (matched === 5) break;
+    }
+    const matchPct = Math.round((bestMatch.matched / 5) * 100);
+    let risk = 'None';
+    if (matchPct >= 60) risk = 'High';
+    else if (matchPct >= 40) risk = 'Moderate';
+    else if (matchPct >= 20) risk = 'Low';
+    else risk = 'None';
+    return {risk, matchPct, pos: bestMatch.pos}; // pos is 1-based index where match begins in primer, may be -1 if none
+  }
+
+  /* -------------------------
+     Primer dimer calculation exactly as specified
+     ------------------------- */
+  function primerDimerPotential(forwardPrimer, reversePrimer){
+    // For forward primer, identify 3' end = last 8 bases of forward primer sequence
+    const f3 = forwardPrimer.slice(Math.max(0, forwardPrimer.length - 8));
+    // For reverse primer, calculate reverse complement of entire reverse primer sequence
+    const rcRev = reverseComplement(reversePrimer); // rc of reverse primer
+    // identify 5' end of this reverse complement = first 8 bases of rcRev
+    const rc5 = rcRev.slice(0, 8);
+    // Compare f3 vs rc5 position by position from 1 until mismatch, count consecutive matching base pairs starting from position 1
+    let matchCount = 0;
+    for (let i=0; i < Math.min(8, f3.length, rc5.length); i++){
+      if (f3[i] === rc5[i]) matchCount++;
+      else break;
+    }
+    const scorePct = Math.round((matchCount / 8) * 100);
+    let risk = 'Low';
+    if (matchCount >= 4) {
+      if (scorePct >= 75) risk = 'High';
+      else if (scorePct >= 50) risk = 'Moderate';
+      else risk = 'Low';
+    } else {
+      risk = 'Low';
+    }
+    return {matchCount, scorePct, risk};
+  }
+
+  /* -------------------------
+     GC clamp check exactly as specified
+     ------------------------- */
+  function gcClampStatus(primer){
+    // Check first and last character
+    const first = primer[0];
+    const last = primer[primer.length - 1];
+    const isFirstGC = first === 'G' || first === 'C';
+    const isLastGC = last === 'G' || last === 'C';
+    if (isFirstGC && isLastGC) return {status:'Present', level:'PASS'};
+    if (isFirstGC && !isLastGC) return {status:'Partial - 5 prime only', level:'WARNING'};
+    if (!isFirstGC && isLastGC) return {status:'Partial - 3 prime only', level:'WARNING'};
+    return {status:'Absent', level:'FAIL'};
+  }
+
+  /* -------------------------
+     Product size calculation
+     ------------------------- */
+  function productSize(forwardStart1Based, reverseStart1Based){
+    // Product Size = Reverse Position - Forward Position + 1
+    return (reverseStart1Based - forwardStart1Based + 1);
+  }
+
+  /* -------------------------
+     Candidate generation process (steps 3 & 4 exactly)
+     ------------------------- */
+  function generatePrimers(targetSeq, params){
+    // Validate inputs already done; generate candidates
+    const L = targetSeq.length;
+    const fwdCandidates = [];
+    const revCandidates = [];
+
+    const minL = params.minPrimerLen;
+    const maxL = params.maxPrimerLen;
+
+    // Helper to test candidate meets basic criteria: contains only A/T/G/C (no N), GC within range, Tm within range
+    function passesBasic(seq){
+      for (let c of seq){
+        if (!(c === 'A' || c === 'T' || c === 'G' || c === 'C')) return false; // must be only A/T/G/C
+      }
+      const gcPercent = calcGCPercent(seq);
+      if (gcPercent < params.minGC || gcPercent > params.maxGC) return false;
+      const tmObj = calcTmExact(seq);
+      const tm = Math.round(tmObj.tm*10)/10;
+      if (tm < params.minTm || tm > params.maxTm) return false;
+      return true;
+    }
+
+    // Forward primer scanning: scan left to right positions 0..L-minL
+    for (let i=0; i <= L - minL; i++){
+      // for each start, attempt lengths minL..maxL but ensure within bounds
+      for (let len = minL; len <= maxL && i + len <= L; len++){
+        const seq = targetSeq.slice(i, i+len);
+        if (!passesBasic(seq)) continue;
+        // store candidate with attributes
+        const tmObj = calcTmExact(seq);
+        const tm = Math.round(tmObj.tm*10)/10;
+        const gc = calcGCPercent(seq);
+        fwdCandidates.push({
+          start: i+1, // 1-based
+          seq,
+          len,
+          tm,
+          tmMethod: tmObj.method,
+          gc
+        });
+      }
+    }
+
+    // Reverse primers: for reverse primers, iterate start position on original forward strand p from 0..L-minL
+    // at each p, create primerSeq = reverseComplement(original.substr(p, len)) (this gives 5'->3' primer sequence)
+    for (let p=0; p <= L - minL; p++){
+      for (let len = minL; len <= maxL && p + len <= L; len++){
+        const origSub = targetSeq.slice(p, p+len); // original forward strand segment where reverse primer binds (5'->3' on forward)
+        // primer sequence to present is reverse complement of origSub:
+        const primerSeq = reverseComplement(origSub);
+        // primer candidates must contain only A/T/G/C (reverseComplement of A/T/G/C also is A/T/G/C)
+        // but we were told candidate must contain only A/T/G/C; origSub may contain N; reject if N present in origSub
+        let hasInvalid=false;
+        for (let ch of origSub){ if (ch !== 'A' && ch !== 'T' && ch !== 'G' && ch !== 'C') { hasInvalid = true; break; } }
+        if (hasInvalid) continue;
+        // check GC and Tm constraints on primerSeq
+        const gc = calcGCPercent(primerSeq);
+        const tmObj = calcTmExact(primerSeq);
+        const tm = Math.round(tmObj.tm*10)/10;
+        if (gc < params.minGC || gc > params.maxGC) continue;
+        if (tm < params.minTm || tm > params.maxTm) continue;
+        // store with start position defined as p+1 (1-based) on forward strand (leftmost base of the binding region)
+        revCandidates.push({
+          start: p+1,
+          seq: primerSeq,
+          len,
+          tm,
+          tmMethod: tmObj.method,
+          gc
+        });
+      }
+    }
+
+    return {fwdCandidates, revCandidates};
+  }
+
+  /* -------------------------
+     Pairing, checking secondary structure, GC clamp, filtering (Steps 8-10)
+     ------------------------- */
+
+  function evaluatePairs(fwdCandidates, revCandidates, params, targetLen){
+    const pairs = [];
+    // For efficiency, index revCandidates by start position for quick product size calc (though we'll iterate combinations)
+    // We must create all possible combinations and then filter by product size and tm diff etc.
+    for (let f of fwdCandidates){
+      for (let r of revCandidates){
+        // product size formula uses Reverse Position - Forward Position +1 (both 1-based)
+        const product = productSize(f.start, r.start);
+        // product must be positive (reverse must be downstream of forward)
+        if (product <= 0) continue;
+        // check product size within user-specified
+        if (product < params.minProduct || product > params.maxProduct) continue;
+        // Compute tm difference absolute
+        const tmDiff = Math.abs(Math.round((f.tm - r.tm)*10)/10);
+        // If tm difference exceeds max allowed, mark warning or fail? The specification: flag pairs exceeding limit with yellow warning. Eliminate pairs with red fail if any exists.
+        // We'll treat exceeding maxTmDiff as WARNING (not elimination), but the algorithm steps said eliminate pairs with red fail if any exists. Later they said check if Tm difference within user-specified maximum limit -> flag within limit with green pass; flag exceeding limit with yellow warning. Eliminate pairs with red fail if any exists. So we don't eliminate by tm diff unless other fails.
+        // Now do secondary structure checks if enabled
+        const f_homo = detectHomopolymers(f.seq, params.maxHomopolymer); // returns issues array
+        const r_homo = detectHomopolymers(r.seq, params.maxHomopolymer);
+        // homopolymer severity: any 'fail' in either candidate -> eliminate pair
+        const homoFail = f_homo.some(x => x.severity==='fail') || r_homo.some(x=>x.severity==='fail');
+        if (homoFail) continue; // eliminate pair with fail
+        const homoWarnings = f_homo.concat(r_homo).filter(x => x.severity==='warning');
+
+        // GC clamp if enabled
+        let gcClampResultF = null, gcClampResultR = null;
+        if (params.gcClamp){
+          gcClampResultF = gcClampStatus(f.seq);
+          gcClampResultR = gcClampStatus(r.seq);
+          // if either is FAIL, eliminate pair
+          if (gcClampResultF.level === 'FAIL' || gcClampResultR.level === 'FAIL') continue;
+        }
+
+        // secondary structure: hairpin for each primer
+        let hairpinF = null, hairpinR = null;
+        if (params.secondaryStructure){
+          hairpinF = hairpinPotential(f.seq);
+          hairpinR = hairpinPotential(r.seq);
+          // hairpin high risk should eliminate pair
+          if (hairpinF.risk === 'High' || hairpinR.risk === 'High') continue;
+        }
+
+        // primer dimer check
+        let dimer = null;
+        if (params.secondaryStructure){
+          dimer = primerDimerPotential(f.seq, r.seq);
+          // if dimer risk high -> eliminate pair
+          if (dimer.risk === 'High') continue;
+        }
+
+        // At this point the pair passes elimination filters
+        // Determine status badges: combine parameter statuses
+        const paramIssues = [];
+        // Check Tm within range for each primer already done in candidate generation; but check for being within optimal closeness too
+        if (tmDiff <= params.maxTmDiff) {
+          // good
+        } else {
+          paramIssues.push({type:'Tm difference', level:'warning', text:`Tm difference ${tmDiff}°C exceeds max allowed ${params.maxTmDiff}°C`});
+        }
+
+        // GC warnings (candidates could be on edge)
+        if (f.gc < params.minGC || f.gc > params.maxGC) paramIssues.push({type:'GC', level:'fail', text:`Forward GC ${f.gc}% outside allowed range`});
+        if (r.gc < params.minGC || r.gc > params.maxGC) paramIssues.push({type:'GC', level:'fail', text:`Reverse GC ${r.gc}% outside allowed range`});
+
+        // homopolymer warnings (equal to param)
+        homoWarnings.forEach(h => {
+          paramIssues.push({type:'Homopolymer', level:'warning', text:`${h.length} consecutive ${h.base} bases at position ${h.start}-${h.end}`});
+        });
+
+        // hairpin moderate/low
+        if (hairpinF && (hairpinF.risk === 'Moderate' || hairpinF.risk === 'Low')){
+          paramIssues.push({type:'Hairpin (F)', level: hairpinF.risk === 'Moderate' ? 'warning' : 'info', text: `Forward primer hairpin risk ${hairpinF.risk} - ${hairpinF.matchPct}% complementarity at position ${hairpinF.pos}`});
+        }
+        if (hairpinR && (hairpinR.risk === 'Moderate' || hairpinR.risk === 'Low')){
+          paramIssues.push({type:'Hairpin (R)', level: hairpinR.risk === 'Moderate' ? 'warning' : 'info', text: `Reverse primer hairpin risk ${hairpinR.risk} - ${hairpinR.matchPct}% complementarity at position ${hairpinR.pos}`});
+        }
+
+        // primer dimer moderate/low
+        if (dimer && (dimer.risk === 'Moderate' || dimer.risk === 'Low')){
+          paramIssues.push({type:'Dimer', level: dimer.risk === 'Moderate' ? 'warning' : 'info', text: `Primer dimer potential ${dimer.risk} - ${dimer.scorePct}% similarity at 3' ends`});
+        }
+
+        // GC clamp partial warnings
+        if (gcClampResultF && gcClampResultF.level === 'WARNING') paramIssues.push({type:'GC Clamp (F)', level:'warning', text:`Forward: ${gcClampResultF.status}`});
+        if (gcClampResultR && gcClampResultR.level === 'WARNING') paramIssues.push({type:'GC Clamp (R)', level:'warning', text:`Reverse: ${gcClampResultR.status}`});
+
+        // A final overall status
+        let overall = 'PASS';
+        if (paramIssues.some(x=> x.level === 'fail')) overall = 'FAIL';
+        else if (paramIssues.some(x=> x.level === 'warning')) overall = 'WARNING';
+
+        // Score and bonus ranking
+        let score = 0;
+        if (overall === 'PASS') score += 100;
+        else if (overall === 'WARNING') score += 60;
+        else score += 10;
+        // bonus for closeness to optTm and mid-range GC
+        const avgTm = (f.tm + r.tm) / 2;
+        const tmDiffToOpt = Math.abs(avgTm - params.optTm);
+        score -= Math.round(tmDiffToOpt * 2); // penalize deviation
+        const avgGC = (f.gc + r.gc)/2;
+        score -= Math.round(Math.abs(avgGC - ((params.minGC + params.maxGC)/2)) * 0.5);
+
+        pairs.push({
+          forward: f,
+          reverse: r,
+          product,
+          tmDiff,
+          paramIssues,
+          overall,
+          score,
+          dimer,
+          hairpinF,
+          hairpinR,
+          gcClampResultF,
+          gcClampResultR,
+          homoWarnings
+        });
+      }
+    }
+
+    // Now sort by score descending
+    pairs.sort((a,b)=> b.score - a.score);
+    return pairs;
+  }
+
+  /* -------------------------
+     Ranking & selecting top N pairs (Step 11)
+     ------------------------- */
+  function selectTopPairs(pairs, N){
+    if (pairs.length === 0) return [];
+    return pairs.slice(0, N);
+  }
+
+  /* -------------------------
+     Prepare display output for each selected primer pair (Step 12)
+     ------------------------- */
+  function renderResults(pairs, params, targetSeq){
+    resultsList.innerHTML = '';
+    if (!pairs || pairs.length === 0){
+      resultsArea.style.display = 'block';
+      resultsList.innerHTML = '';
+      foundMessage.textContent = 'No suitable primer pairs found with current parameters.';
+      return;
+    }
+    emptyState.style.display = 'none';
+    resultsArea.style.display = 'block';
+    foundMessage.textContent = `Found ${pairs.length} primer pair(s). Showing top ${pairs.length > params.pairsCount ? params.pairsCount : pairs.length}.`;
+
+    // For each pair build card
+    pairs.forEach((p, idx) => {
+      const card = el('div', {class:'pair-card'});
+      // add show animation staggered
+      setTimeout(()=> card.classList.add('show'), idx*120);
+
+      const header = el('div', {style:'display:flex;justify-content:space-between;align-items:center'});
+      header.appendChild(el('div', {style:'font-weight:700'}, `Primer Pair ${idx+1}`));
+      const overallBadge = el('div', {class:`badge ${p.overall==='PASS' ? 'pass' : p.overall==='WARNING' ? 'warn' : 'fail'}`}, `${p.overall==='PASS' ? '✔ PASS' : p.overall==='WARNING' ? '⚠ WARNING' : '✖ FAIL'}`);
+      header.appendChild(overallBadge);
+      card.appendChild(header);
+
+      // forward and reverse boxes
+      const primerRow = el('div', {class:'primer-row'});
+      const fbox = el('div', {class:'primer-box fwd'});
+      const rbox = el('div', {class:'primer-box rev'});
+      fbox.appendChild(el('div', {style:'font-weight:600'}, "Forward Primer (5' → 3')"));
+      fbox.appendChild(el('div', {class:'seq'}, `5' → ${p.forward.seq} ← 3'`));
+      fbox.appendChild(el('div', {class:'meta-grid'},
+        el('div', {}, `Length: ${p.forward.len} bp`),
+        el('div', {}, `Tm: ${p.forward.tm} °C (${p.forward.tmMethod})`),
+        el('div', {}, `GC: ${p.forward.gc} %`),
+        el('div', {}, `Start Position: ${p.forward.start} bp`)
+      ));
+      // status small
+      const fstatus = p.gcClampResultF ? p.gcClampResultF.status : 'Not checked';
+      fbox.appendChild(el('div', {class:'muted'}, `GC Clamp: ${fstatus}`));
+
+      rbox.appendChild(el('div', {style:'font-weight:600'}, "Reverse Primer (5' → 3')"));
+      rbox.appendChild(el('div', {class:'seq'}, `5' → ${p.reverse.seq} ← 3'`));
+      rbox.appendChild(el('div', {class:'meta-grid'},
+        el('div', {}, `Length: ${p.reverse.len} bp`),
+        el('div', {}, `Tm: ${p.reverse.tm} °C (${p.reverse.tmMethod})`),
+        el('div', {}, `GC: ${p.reverse.gc} %`),
+        el('div', {}, `Start Position: ${p.reverse.start} bp`)
+      ));
+      const rstatus = p.gcClampResultR ? p.gcClampResultR.status : 'Not checked';
+      rbox.appendChild(el('div', {class:'muted'}, `GC Clamp: ${rstatus}`));
+
+      primerRow.appendChild(fbox);
+      primerRow.appendChild(rbox);
+      card.appendChild(primerRow);
+
+      // combined info
+      const combo = el('div', {style:'display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap'});
+      combo.appendChild(el('div', {}, `Expected PCR product size: ${p.product} bp`));
+      combo.appendChild(el('div', {}, `Tm Difference: ${p.tmDiff} °C`));
+      combo.appendChild(el('div', {}, `Compatibility: ${p.overall === 'PASS' ? 'Compatible' : p.overall === 'WARNING' ? 'Possibly compatible' : 'Incompatible'}`));
+      card.appendChild(combo);
+
+      // Warnings section listing paramIssues
+      if (p.paramIssues && p.paramIssues.length > 0){
+        const warns = el('div', {class:'warnings'});
+        p.paramIssues.forEach(pi => {
+          const color = pi.level === 'fail' ? 'var(--status-red)' : pi.level === 'warning' ? 'var(--status-yellow)' : 'var(--text-secondary)';
+          const icon = pi.level === 'fail' ? '✖' : pi.level === 'warning' ? '⚠' : 'ℹ';
+          warns.appendChild(el('div', {class:'warn-item'}, `${icon} ${pi.type} — ${pi.text}`));
+        });
+        card.appendChild(warns);
+      }
+
+      // restriction sites check in primers
+      const restrictionFinds = checkRestrictionSitesInPair(p, state.restrictionSites);
+      if (restrictionFinds.length > 0){
+        const rdiv = el('div', {style:'margin-top:8px'}, el('div',{style:'font-weight:600'}, 'Restriction Site Matches'));
+        restrictionFinds.forEach(rf => {
+          rdiv.appendChild(el('div',{class:'muted'}, `${rf.site} in ${rf.which} at position ${rf.pos}`));
+        });
+        card.appendChild(rdiv);
+      }
+
+      // gradient suggestion
+      const gradient = suggestTemperatureGradient(p);
+      const gradDiv = el('div', {style:'margin-top:8px'}, el('div',{style:'font-weight:600'}, 'Suggested Gradient PCR Temperatures'));
+      gradDiv.appendChild(el('div',{class:'muted'}, gradient.join(', ')));
+      card.appendChild(gradDiv);
+
+      // actions: copy, copy sequences only, save, export
+      const actions = el('div',{class:'actions-row', style:'margin-top:8px'});
+      const copyBtn = el('button',{class:'action-btn copy-btn'}, 'Copy Sequences');
+      const copySeqOnlyBtn = el('button',{class:'action-btn'}, 'Copy Just Sequences');
+      const saveBtn = el('button',{class:'action-btn'}, 'Save Pair');
+      const exportBtn = el('button',{class:'action-btn'}, 'Export CSV');
+      actions.appendChild(copyBtn);
+      actions.appendChild(copySeqOnlyBtn);
+      actions.appendChild(saveBtn);
+      actions.appendChild(exportBtn);
+      card.appendChild(actions);
+
+      // copy functionality
+      copyBtn.addEventListener('click', async () => {
+        const txt = formatPrimerPairForCopy(p, idx+1);
+        try{
+          await navigator.clipboard.writeText(txt);
+          copyBtn.classList.add('copied'); copyBtn.textContent = 'Copied ✓';
+          setTimeout(()=> { copyBtn.classList.remove('copied'); copyBtn.textContent = 'Copy Sequences'; }, 2000);
+        }catch(e){
+          alert('Copy failed — your browser may restrict clipboard access.');
+        }
+      });
+      copySeqOnlyBtn.addEventListener('click', async () => {
+        const txt = `${p.forward.seq}\n${p.reverse.seq}`;
+        try{
+          await navigator.clipboard.writeText(txt);
+          copySeqOnlyBtn.textContent = 'Copied ✓';
+          setTimeout(()=> copySeqOnlyBtn.textContent = 'Copy Just Sequences', 2000);
+        }catch(e){ alert('Copy failed — your browser may restrict clipboard access.'); }
+      });
+
+      saveBtn.addEventListener('click', () => {
+        const name = prompt('Enter primer name (Prefix will be used for forward/reverse):', `Primer_${idx+1}`);
+        if (name === null) return;
+        const saved = {
+          id: 'p_' + Date.now(),
+          name,
+          timestamp: new Date().toISOString(),
+          params,
+          pair: p
+        };
+        savePrimer(saved);
+        alert('Saved primer pair.');
+        renderSavedList();
+      });
+
+      exportBtn.addEventListener('click', () => {
+        const csv = exportPairAsCSV(p, idx+1);
+        downloadTextFile(csv, `primer_pair_${idx+1}.csv`);
+      });
+
+      resultsList.appendChild(card);
+    });
+  }
+
+  /* Format copy text */
+  function formatPrimerPairForCopy(p, pairIndex){
+    return `Primer Pair ${pairIndex}
+Forward Primer 5'→3': ${p.forward.seq}
+Length: ${p.forward.len} bp; Tm: ${p.forward.tm} °C (${p.forward.tmMethod}); GC: ${p.forward.gc} %
+Reverse Primer 5'→3': ${p.reverse.seq}
+Length: ${p.reverse.len} bp; Tm: ${p.reverse.tm} °C (${p.reverse.tmMethod}); GC: ${p.reverse.gc} %
+Expected PCR Product Size: ${p.product} bp
+Tm Difference: ${p.tmDiff} °C
+Overall Status: ${p.overall}
+`;
+  }
+
+  /* export as CSV */
+  function exportPairAsCSV(p, idx){
+    const headers = ['PairID','ForwardSeq','ForwardLen','ForwardTm','ForwardTmMethod','ForwardGC','ForwardStart','ReverseSeq','ReverseLen','ReverseTm','ReverseTmMethod','ReverseGC','ReverseStart','ProductSize','TmDifference','OverallStatus'];
+    const values = [
+      idx,
+      p.forward.seq,
+      p.forward.len,
+      p.forward.tm,
+      p.forward.tmMethod,
+      p.forward.gc,
+      p.forward.start,
+      p.reverse.seq,
+      p.reverse.len,
+      p.reverse.tm,
+      p.reverse.tmMethod,
+      p.reverse.gc,
+      p.reverse.start,
+      p.product,
+      p.tmDiff,
+      p.overall
+    ];
+    const csv = headers.join(',') + '\n' + values.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    return csv;
+  }
+
+  function downloadTextFile(text, filename){
+    const blob = new Blob([text], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
+  }
+
+  /* -------------------------
+     Restriction site checking
+     ------------------------- */
+  function checkRestrictionSitesInPair(pair, sitesSet){
+    const out = [];
+    const sites = Array.from(sitesSet);
+    sites.forEach(site => {
+      // forward seq
+      const idxF = pair.forward.seq.indexOf(site);
+      if (idxF !== -1) out.push({which:'Forward', site, pos: idxF+1});
+      const idxR = pair.reverse.seq.indexOf(site);
+      if (idxR !== -1) out.push({which:'Reverse', site, pos: idxR+1});
+    });
+    return out;
+  }
+
+  /* -------------------------
+     Temperature gradient suggestion
+     ------------------------- */
+  function suggestTemperatureGradient(pair){
+    // Suggest gradient range as +/- 2-3 degrees around calculated optimal temperature.
+    // Use average Tm as center.
+    const avgTm = Math.round(((pair.forward.tm + pair.reverse.tm)/2)*10)/10;
+    // make 5 conditions spanning avgTm-4 to avgTm+4 in steps of 2
+    const start = Math.round((avgTm - 4));
+    const temps = [];
+    for (let t = start; t <= start + 8; t += 2) temps.push(`${t}°C`);
+    return temps;
+  }
+
+  /* -------------------------
+     Saving / localStorage
+     ------------------------- */
+  function loadSavedPrimers(){
+    try{
+      const raw = localStorage.getItem('primer_design_saved_v1');
+      if (!raw) return [];
+      return JSON.parse(raw);
+    }catch(e){ return []; }
+  }
+  function savePrimer(obj){
+    state.saved.push(obj);
+    localStorage.setItem('primer_design_saved_v1', JSON.stringify(state.saved));
+  }
+  function deleteSaved(id){
+    state.saved = state.saved.filter(s => s.id !== id);
+    localStorage.setItem('primer_design_saved_v1', JSON.stringify(state.saved));
+    renderSavedList();
+  }
+  function renderSavedList(){
+    savedList.innerHTML = '';
+    if (!state.saved || state.saved.length === 0) { savedList.appendChild(el('div', {class:'muted'}, 'No saved primers')); return; }
+    state.saved.slice().reverse().forEach(s => {
+      const box = el('div', {style:'padding:10px;border:1px solid var(--border);border-radius:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;background:#fff'});
+      const left = el('div', {}, el('div',{style:'font-weight:700'}, s.name), el('div',{class:'muted'}, new Date(s.timestamp).toLocaleString()));
+      const actions = el('div', {style:'display:flex;gap:6px'}, el('button',{class:'small-btn'}, 'View'), el('button',{class:'small-btn'}, 'Delete'));
+      actions.children[0].addEventListener('click', ()=> {
+        // show modal/details
+        const txt = `Name: ${s.name}\nSaved: ${new Date(s.timestamp).toLocaleString()}\n\nForward: ${s.pair.forward.seq}\nReverse: ${s.pair.reverse.seq}\nProduct Size: ${s.pair.product}\nOverall: ${s.pair.overall}`;
+        alert(txt);
+      });
+      actions.children[1].addEventListener('click', ()=> {
+        if (confirm('Delete this saved primer?')) deleteSaved(s.id);
+      });
+      box.appendChild(left); box.appendChild(actions);
+      savedList.appendChild(box);
+    });
+  }
+
+  viewSavedBtn.addEventListener('click', () => {
+    renderSavedList();
+    // scroll to savedList
+    savedList.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+
+  exportAllBtn.addEventListener('click', () => {
+    if (!state.saved || state.saved.length === 0) { alert('No saved primers to export.'); return; }
+    const csvRows = [];
+    const headers = ['ID','Name','Timestamp','PairIndex','ForwardSeq','ForwardLen','ForwardTm','ForwardGC','ForwardStart','ReverseSeq','ReverseLen','ReverseTm','ReverseGC','ReverseStart','ProductSize','TmDiff','Overall'];
+    csvRows.push(headers.join(','));
+    state.saved.forEach((s, idx) => {
+      const p = s.pair;
+      const row = [s.id, s.name, s.timestamp, idx+1, p.forward.seq, p.forward.len, p.forward.tm, p.forward.gc, p.forward.start, p.reverse.seq, p.reverse.len, p.reverse.tm, p.reverse.gc, p.reverse.start, p.product, p.tmDiff, p.overall];
+      csvRows.push(row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    });
+    downloadTextFile(csvRows.join('\n'), 'saved_primers.csv');
+  });
+
+  /* -------------------------
+     Design button main flow (Steps 1-12)
+     ------------------------- */
+  designBtn.addEventListener('click', async () => {
+    // Prevent multiple clicks
+    designBtn.disabled = true;
+    designBtn.classList.add('clicked');
+    setTimeout(()=> { designBtn.disabled = false; designBtn.classList.remove('clicked'); }, 800);
+
+    // Step 1: Validate input sequence
+    const raw = dnaInput.value || '';
+    const seq = extractSeq(raw);
+    if (!seq || seq.length === 0) {
+      showError('Error - no sequence found. Paste a DNA sequence first (FASTA or plain).');
+      return;
+    }
+    if (seq.length < 100) { showError(`Error - Sequence too short. Minimum 100 base pairs required. Current length: ${seq.length} bp.`); return; }
+    if (seq.length > 100000) { showError(`Error - Sequence too long. Maximum 100000 base pairs allowed. Current length: ${seq.length} bp.`); return; }
+    const baseCheck = checkValidBases(seq);
+    if (!baseCheck.ok) {
+      showError(`Error - Invalid DNA base found at position ${baseCheck.pos}. Found character '${baseCheck.char}'. Only A, T, G, C, N allowed.`); return;
+    }
+
+    // Step 2: Validate Parameters
+    const params = readParams();
+    const paramValid = validateParams(params);
+    if (!paramValid.ok) { showError(paramValid.msg); return; }
+
+    // Show loading
+    emptyState.style.display = 'none';
+    resultsArea.style.display = 'none';
+    loadingBox.style.display = 'flex';
+    loadingText.textContent = 'Designing primers — please wait...';
+
+    // Do heavy calculation in a small setTimeout to allow UI update (no web workers here)
+    setTimeout(()=> {
+      // Step 3 & 4: generate candidates
+      const {fwdCandidates, revCandidates} = generatePrimers(seq, params);
+
+      // Step 5 & 6 already computed tm and gc during generation
+      // Step 7: homopolymer checks applied later during pairing
+
+      // Step 8-10: pairing and checks
+      const allPairs = evaluatePairs(fwdCandidates, revCandidates, params, seq.length);
+
+      // Step 11: ranking and select top N
+      const top = selectTopPairs(allPairs, params.pairsCount);
+
+      // Step 12: prepare output and show results
+      loadingBox.style.display = 'none';
+      // Render results
+      renderResults(top, params, seq);
+
+      // show restriction summary & gradient
+      const allResMatches = [];
+      top.forEach(p => {
+        const res = checkRestrictionSitesInPair(p, state.restrictionSites);
+        res.forEach(rf => allResMatches.push(`${rf.which}: ${rf.site} at ${rf.pos}`));
+      });
+      restrictionSummary.textContent = allResMatches.length ? 'Restriction sites found: ' + allResMatches.join('; ') : 'No selected restriction sites found in top primer pairs.';
+      // gradient summary from first pair
+      gradientSummary.textContent = top.length ? 'Example gradient: ' + suggestTemperatureGradient(top[0]).join(', ') : '';
+
+      // If found fewer than requested, inform user
+      if (top.length < params.pairsCount) {
+        foundMessage.textContent = `Found ${top.length} suitable primer pairs instead of requested ${params.pairsCount} pairs due to strict parameters.`;
+      }
+
+      designBtn.disabled = false;
+    }, 60);
+  });
+
+  function showError(msg){
+    loadingBox.style.display = 'none';
+    resultsArea.style.display = 'block';
+    resultsList.innerHTML = '';
+    foundMessage.textContent = '';
+    emptyState.style.display = 'none';
+    // display as bright red message at top of results card
+    resultsList.innerHTML = `<div style="padding:12px;border-radius:10px;background:rgba(255,240,240,1);border:1px solid rgba(255,200,200,1)">${msg}</div>`;
+    designBtn.disabled = false;
+  }
+
+  function readParams(){
+    return {
+      minProduct: Number(minProduct.value),
+      maxProduct: Number(maxProduct.value),
+      minPrimerLen: Number(minPrimerLen.value),
+      maxPrimerLen: Number(maxPrimerLen.value),
+      optTm: Number(optTm.value),
+      minTm: Number(minTm.value),
+      maxTm: Number(maxTm.value),
+      maxTmDiff: Number(maxTmDiff.value),
+      minGC: Number(minGC.value),
+      maxGC: Number(maxGC.value),
+      maxHomopolymer: Number(maxHomopolymer.value),
+      pairsCount: Number(pairsCount.value),
+      gcClamp: gcClampToggle.classList.contains('on'),
+      secondaryStructure: secStructToggle.classList.contains('on'),
+      restrictionSites: Array.from(state.restrictionSites)
+    };
+  }
+
+  function validateParams(p){
+    // Validate ranges and logical consistency with messages exactly as specified
+    if (p.minProduct < 100) return {ok:false, msg: `Error - Minimum PCR product size must be at least 100 bp.`};
+    if (p.maxProduct > 50000) return {ok:false, msg: `Error - Maximum PCR product size must be ≤ 50000 bp.`};
+    if (p.maxProduct <= p.minProduct) return {ok:false, msg: `Error - Maximum PCR product size must be greater than minimum.`};
+
+    if (p.minPrimerLen < 15 || p.maxPrimerLen < 15) return {ok:false, msg: `Error - Primer length minimum allowed is 15 nt.`};
+    if (p.maxPrimerLen > 35 || p.minPrimerLen > 35) return {ok:false, msg: `Error - Primer length maximum allowed is 35 nt.`};
+    if (p.maxPrimerLen < p.minPrimerLen) return {ok:false, msg: `Error - Maximum primer length must be >= minimum primer length.`};
+
+    if (p.minTm >= p.optTm) return {ok:false, msg: `Error - Minimum Tm (${p.minTm}°C) must be less than Optimal Tm (${p.optTm}°C).`};
+    if (p.optTm >= p.maxTm) return {ok:false, msg: `Error - Optimal Tm (${p.optTm}°C) must be less than Maximum Tm (${p.maxTm}°C).`};
+    if (p.minTm < 45 || p.maxTm > 75) return {ok:false, msg: `Error - Tm values out of allowed range.`};
+
+    if (p.minGC < 20 || p.maxGC > 80) return {ok:false, msg: 'Error - GC content must be between 20 and 80 percent.'};
+    if (p.minGC > p.maxGC) return {ok:false, msg: `Error - Maximum GC content must be greater than or equal to Minimum GC content.`};
+
+    if (p.maxTmDiff < 0) return {ok:false, msg: `Error - Maximum Tm difference must be >= 0.`};
+    if (p.maxHomopolymer < 2) return {ok:false, msg: `Error - Homopolymer run minimum is 2.`};
+    if (p.pairsCount < 1 || p.pairsCount > 10) return {ok:false, msg: `Error - Number of primer pairs must be between 1 and 10.`};
+
+    return {ok:true};
+  }
+
+  /* -------------------------
+     On load: initial UI setup
+     ------------------------- */
+  function init(){
+    updateCharCount();
+    renderSavedList();
+    // animate header and cards with stagger
+    setTimeout(()=> $('.header').style.opacity = 1, 10);
+
+    // accessibility: allow keyboard toggles
+    $$('.toggle').forEach(t => {
+      t.addEventListener('keydown', (e)=> {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleElement(t); }
+      });
+    });
+
+    // allow keyboard focus on results cards copy
+    document.addEventListener('keydown', (e)=> {
+      if (e.key === 'F2') { designBtn.click(); }
+    });
+
+    // small: refresh restriction checkboxes initial
+    refreshRestrictionCheckboxes();
+  }
+
+  init();
+
+})();
+</script>
+</body>
+</html>
