@@ -6,12 +6,9 @@
 <title>DNA Primer Design Tool — Single File</title>
 <meta name="description" content="Offline DNA Primer Design Tool — generate PCR primer pairs with Tm, GC, hairpin, dimer, GC clamp checks, copy/save/export, and more." />
 <style>
-/* =========================
-   THEME & LAYOUT VARIABLES
-   ========================= */
 :root{
-  --bg-primary: rgb(240,248,255); /* very light sky blue */
-  --surface: rgb(255,255,255); /* bright white */
+  --bg-primary: rgb(240,248,255);
+  --surface: rgb(255,255,255);
   --mint: rgb(144,238,144);
   --mint-weak: rgba(144,238,144,0.08);
   --cyan: rgb(0,255,255);
@@ -37,7 +34,6 @@
   --anim-med: 400ms;
 }
 
-/* ====== Reset & base ====== */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -54,12 +50,10 @@ body{
   align-items:flex-start;
 }
 
-/* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
 
-/* ====== Container ====== */
 .container{
   width:100%;
   max-width:var(--max-width);
@@ -69,7 +63,6 @@ body{
   gap:24px;
 }
 
-/* ====== Header ====== */
 .header {
   background:var(--surface);
   border-radius: var(--radius-card);
@@ -84,9 +77,7 @@ body{
   opacity:0;
   animation: fadeIn 450ms var(--ease) forwards;
 }
-.title {
-  flex:1;
-}
+.title { flex:1; }
 .h1 {
   font-size:42px;
   font-weight:700;
@@ -101,18 +92,16 @@ body{
   font-weight:400;
 }
 
-/* ====== Grid layout for main content ====== */
 .main-grid{
   display:grid;
-  grid-template-columns: 1fr 420px;
+  grid-template-columns: 1fr 1fr;
   gap:24px;
   align-items:start;
 }
-@media (max-width: 1024px){
+@media (max-width: 1400px){
   .main-grid{ grid-template-columns: 1fr; }
 }
 
-/* ====== Cards ====== */
 .card{
   background:var(--surface);
   border-radius: var(--radius-card);
@@ -128,7 +117,6 @@ body{
 .card.delay-2{ animation-delay: 240ms; }
 .card.delay-3{ animation-delay: 360ms; }
 
-/* ====== Animations ====== */
 @keyframes fadeIn { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform:none } }
 @keyframes fadeUp { from { opacity:0; transform: translateY(12px) } to { opacity:1; transform:none } }
 @keyframes pulseOnce {
@@ -157,7 +145,6 @@ body{
   box-shadow: 0 6px 16px rgba(0,0,0,0.06);
 }
 
-/* ====== Input section ====== */
 .input-area{
   display:flex;
   flex-direction:column;
@@ -207,7 +194,6 @@ body{
 }
 .small-btn:hover{ transform:scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,0.06) }
 
-/* ====== Parameter panel ====== */
 .params {
   display:grid;
   gap:12px;
@@ -243,7 +229,6 @@ body{
 }
 .number-input:focus{ box-shadow: 0 6px 18px rgba(173,255,47,0.12); border-color: var(--mint) }
 
-/* slider styling */
 .range-row{
   display:flex;
   gap:8px;
@@ -268,7 +253,6 @@ input[type="range"]::-webkit-slider-thumb{
 .toggle .dot{ position:absolute; top:4px; left:4px;width:20px;height:20px;border-radius:50%;background:white; transition: all 250ms var(--ease) }
 .toggle.on .dot{ left:24px }
 
-/* ===== CTA ===== */
 .cta-row{ display:flex; gap:12px; align-items:center; justify-content:flex-start; flex-wrap:wrap }
 .primary-cta{
   background: linear-gradient(180deg, var(--cyan), #bfffff);
@@ -287,10 +271,8 @@ input[type="range"]::-webkit-slider-thumb{
 .primary-cta:hover{ transform:scale(1.05); box-shadow: 0 12px 32px rgba(0,0,0,0.08) }
 .primary-cta:active{ transform:scale(0.99) }
 
-/* stop pulsing on focus or after first click */
 .primary-cta.clicked{ animation:none; }
 
-/* ===== Loading overlay ===== */
 .loading {
   display:none;
   gap:12px;
@@ -307,29 +289,33 @@ input[type="range"]::-webkit-slider-thumb{
 }
 @keyframes spin{ from{ transform:rotate(0deg) } to{ transform:rotate(360deg) } }
 
-/* ===== Results layout ===== */
 .results-grid{
   display:grid;
   gap:12px;
 }
 .results-list{
   display:grid;
-  gap:12px;
-  grid-template-columns: repeat(2, 1fr);
+  gap:16px;
+  grid-template-columns: 1fr;
+  max-width: 100%;
+  overflow-x: auto;
 }
 @media (max-width:900px){ .results-list{ grid-template-columns: 1fr } }
 .pair-card{
   border-radius:12px;
-  padding:16px;
-  border:1px solid var(--border);
+  padding:18px;
+  border:2px solid var(--border);
   background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,255,0.98));
   box-shadow: var(--shadow);
   display:grid;
-  gap:12px;
+  gap:14px;
   transform: translateY(12px);
   opacity:0;
+  flex-shrink: 0;
+  min-width: 100%;
 }
 .pair-card.show{ animation: cardIn 420ms var(--ease) forwards; }
+.pair-card.top-choice{ border-left: 6px solid var(--status-green); }
 @keyframes cardIn { to { transform:none; opacity:1 } }
 
 .primer-row{ display:flex; gap:12px; align-items:flex-start; }
@@ -350,26 +336,21 @@ input[type="range"]::-webkit-slider-thumb{
 .badge.warn{ background: var(--status-yellow); color: #4a3300; }
 .badge.fail{ background: var(--status-red); color: #5a1f00; }
 
-/* warnings list */
 .warnings{ display:grid; gap:8px; margin-top:8px; }
 .warn-item{ background: rgba(255,250,240,1); padding:10px; border-radius:8px; border:1px solid rgba(255,220,200,1); font-size:13px }
 
-/* copy/save/export row */
 .actions-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
 .action-btn{ padding:8px 12px; border-radius:8px; border:1px solid var(--border); background: linear-gradient(180deg,#ffffff,#fbfdff); cursor:pointer; font-weight:600; transition: all 220ms var(--ease) }
 .copy-btn{ background: linear-gradient(180deg,var(--cyan), #bffeff); color:#003a3a }
 .copy-btn.copied{ background: var(--status-green); color:#013203 }
 
-/* saved primer modal/list */
 .saved-list{ display:grid; gap:10px; max-height:300px; overflow:auto; padding:6px }
 
-/* footer */
 .footer{
   padding:16px;border-radius:12px;background:transparent;color:var(--text-secondary);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px
 }
 .footer a{ color:var(--text-secondary); text-decoration:underline; }
 
-/* tooltip */
 .tooltip {
   position:relative; display:inline-block;
 }
@@ -379,10 +360,8 @@ input[type="range"]::-webkit-slider-thumb{
 }
 .tooltip:hover .tip, .tooltip:focus-within .tip { opacity:1; transform: translateX(-50%) translateY(-6px) }
 
-/* inputs icons / small */
 .icon { font-size:18px; margin-right:8px; opacity:0.9; }
 
-/* responsive tweaks */
 @media (max-width: 1280px){ .h1{ font-size:38px } }
 @media (max-width: 600px){
   body{ padding:18px 12px; }
@@ -391,7 +370,6 @@ input[type="range"]::-webkit-slider-thumb{
   .primary-cta{ width:100% }
 }
 
-/* small helper */
 .muted{ color:var(--text-secondary); font-size:13px }
 .center{ display:flex; align-items:center; justify-content:center; gap:8px }
 .right{ text-align:right }
@@ -399,7 +377,6 @@ input[type="range"]::-webkit-slider-thumb{
 </head>
 <body>
 <div class="container" role="main">
-  <!-- HEADER -->
   <header class="header" aria-label="DNA Primer Design Tool header">
     <div class="logo" aria-hidden="true">PD</div>
     <div class="title">
@@ -407,18 +384,15 @@ input[type="range"]::-webkit-slider-thumb{
       <p class="h2">Design PCR primers offline · Tm, GC, hairpin, dimer, GC clamp · Copy, save, export</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-      <div class="muted">Version 1.0 • Single-file</div>
+      <div class="muted">Version 1.0 • Single-file • Fixed</div>
       <div class="muted">Works offline · Accessible · Responsive</div>
     </div>
   </header>
 
-  <!-- MAIN GRID -->
   <div class="main-grid" role="region" aria-label="Main content area">
 
-    <!-- LEFT: Input & Parameters & CTA -->
     <div style="display:flex;flex-direction:column;gap:16px;">
 
-      <!-- INPUT CARD -->
       <section class="card delay-1" id="inputCard" aria-labelledby="inputHeading">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
@@ -443,14 +417,11 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
         </div>
       </section>
 
-      <!-- PARAMS CARD -->
       <section class="card delay-2" id="paramsCard" aria-labelledby="paramsHeading">
         <h3 id="paramsHeading" style="margin:0 0 8px 0;font-size:18px;font-weight:700">Design Parameters</h3>
         <div class="muted" style="margin-bottom:8px">Adjust parameters — live validation will indicate if settings are inconsistent.</div>
 
         <div class="params">
-
-          <!-- Product size group -->
           <div class="param-group" style="background:var(--mint-weak)">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="font-weight:600;color:rgba(70,85,105,1)">PCR Product Size (bp)</div>
@@ -478,7 +449,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
             <div id="productError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
           </div>
 
-          <!-- Primer length group -->
           <div class="param-group" style="background:var(--cyan-weak)">
             <div style="font-weight:600;color:rgba(70,85,105,1)">Primer Length (nt)</div>
             <div class="param-grid">
@@ -496,7 +466,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
             <div id="lengthError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
           </div>
 
-          <!-- Tm group -->
           <div class="param-group" style="background:var(--lav-weak)">
             <div style="font-weight:600;color:rgba(70,85,105,1)">Melting Temperature Tm (°C)</div>
             <div class="param-grid">
@@ -526,7 +495,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
             <div id="tmError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
           </div>
 
-          <!-- GC content group -->
           <div class="param-group" style="background:var(--peach-weak)">
             <div style="font-weight:600;color:rgba(70,85,105,1)">GC Content (%)</div>
             <div class="param-grid">
@@ -544,13 +512,11 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
             <div id="gcError" class="muted" style="color:var(--status-red);display:none;margin-top:8px"></div>
           </div>
 
-          <!-- other params -->
           <div class="param-group">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="font-weight:600;color:rgba(70,85,105,1)">Other Settings</div>
               <div class="muted">Fine-tune checks</div>
             </div>
-
             <div class="param-grid">
               <div>
                 <div class="param-label">Max Homopolymer Run (nt)</div>
@@ -579,7 +545,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
             <div class="muted" style="margin-top:8px">GC clamp requires both 5' and 3' bases to be G or C when enabled.</div>
           </div>
 
-          <!-- restriction sites -->
           <div class="param-group" style="background:var(--lav-weak)">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="font-weight:600;color:rgba(70,85,105,1)">Restriction Site Checker (optional)</div>
@@ -601,7 +566,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
 
         </div>
 
-        <!-- CTA -->
         <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="display:flex;gap:12px;align-items:center" class="cta-row">
             <button id="designBtn" class="primary-cta" title="Design primers">🎯 Design Primers</button>
@@ -611,7 +575,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
         </div>
       </section>
 
-      <!-- collapsible quick tips -->
       <section class="card delay-3" id="tipsCard" aria-labelledby="tipsHeading">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h3 id="tipsHeading" style="margin:0;font-size:18px;font-weight:700">Quick Reference & Best Practices</h3>
@@ -634,12 +597,17 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
 
     </div>
 
-    <!-- RIGHT: Results & Saved -->
     <aside style="display:flex;flex-direction:column;gap:16px">
 
-      <!-- Loading / Results Card -->
       <section class="card" id="resultsCard" aria-labelledby="resultsHeading">
-        <h3 id="resultsHeading" style="margin:0;font-size:18px;font-weight:700">Results</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div>
+            <h3 id="resultsHeading" style="margin:0;font-size:18px;font-weight:700">Results (Top 3)</h3>
+            <div class="muted" style="margin-top:4px">Showing best primer pairs by success score</div>
+          </div>
+          <button id="expandResultsBtn" class="small-btn" style="display:none">View Full Screen</button>
+        </div>
+
         <div id="emptyState" style="margin-top:12px">
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:600">No primers designed yet</div>
@@ -654,11 +622,10 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
 
         <div id="resultsArea" class="results-grid" style="margin-top:12px;display:none">
           <div id="resultsList" class="results-list"></div>
-          <div id="foundMessage" class="muted"></div>
+          <div id="foundMessage" class="muted" style="margin-top:8px"></div>
         </div>
       </section>
 
-      <!-- Save & Export -->
       <section class="card" id="saveCard" aria-labelledby="saveHeading">
         <h3 id="saveHeading" style="margin:0;font-size:18px;font-weight:700">Saved Primers</h3>
         <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
@@ -669,7 +636,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
         <div id="savedList" class="saved-list" style="margin-top:10px"></div>
       </section>
 
-      <!-- Extra: restriction matches & gradient suggestions -->
       <section class="card" aria-labelledby="extraHeading">
         <h3 id="extraHeading" style="margin:0;font-size:18px;font-weight:700">Additional Info</h3>
         <div style="margin-top:8px">
@@ -682,30 +648,17 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
 
   </div>
 
-  <!-- FOOTER -->
   <footer class="footer" role="contentinfo">
     <div>ℹ Designed for lab use. Validate primer specificity with NCBI Primer BLAST before ordering: <a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/" target="_blank" rel="noopener">NCBI Primer BLAST</a></div>
-    <div class="muted">© PrimerDesignTool • 2025 • v1.0</div>
+    <div class="muted">© PrimerDesignTool • 2025 • v1.0 Fixed</div>
   </footer>
 
 </div>
 
-<!-- ==========================
-     JavaScript — All logic
-     ========================== -->
 <script>
-/* =================================================================================
-   DNA Primer Design Tool
-   All JS in single file. No external dependencies.
-   Implements specified formulas and algorithms exactly as requested.
-   ================================================================================= */
-
 (() => {
   'use strict';
 
-  /* -------------------------
-     Utility & DOM shortcuts
-     ------------------------- */
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
   const el = (tag, attrs = {}, ...children) => {
@@ -722,9 +675,6 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
     return e;
   };
 
-  /* -------------------------
-     Elements
-     ------------------------- */
   const dnaInput = $('#dnaInput');
   const charCount = $('#charCount');
   const validationMessage = $('#validationMessage');
@@ -759,23 +709,21 @@ ATGGCCATGGCGTTTAAACCCGGGAAATTTGGCC..." aria-label="DNA sequence input"></textare
   const restrictionSummary = $('#restrictionSummary');
   const gradientSummary = $('#gradientSummary');
   const resultsCard = $('#resultsCard');
+  const expandResultsBtn = $('#expandResultsBtn');
 
-  /* parameter error elements */
   const productError = $('#productError');
   const lengthError = $('#lengthError');
   const tmError = $('#tmError');
   const gcError = $('#gcError');
 
-  /* global data */
   let state = {
     saved: loadSavedPrimers(),
     restrictionSites: new Set( Array.from($$('.resCheck:checked')).map((i)=> i.value) ),
+    lastResults: null
   };
 
-  /* Insert example sequence */
   exampleBtn.addEventListener('click', () => {
-    const ex = `>Example_gene
-ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGCTAGCTAGCTAACGCGATCGATCGATCGTAGCTAGCTGACTGACTGACTGACTGAC`;
+    const ex = `>Example_gene\nATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGCTAGCTAGCTAACGCGATCGATCGATCGTAGCTAGCTGACTGACTGACTGACTGAC`;
     dnaInput.value = ex;
     updateCharCount();
   });
@@ -786,7 +734,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     setValidation('');
   });
 
-  /* parameter toggles */
   function toggleElement(elNode){
     elNode.classList.toggle('on');
     const on = elNode.classList.contains('on');
@@ -797,14 +744,12 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
   secStructToggle.addEventListener('click', ()=> toggleElement(secStructToggle));
   secStructToggle.addEventListener('keypress', (e)=> { if (e.key==='Enter') toggleElement(secStructToggle) });
 
-  /* add custom restriction site */
   $('#addResBtn').addEventListener('click', () => {
     const v = $('#customRes').value.trim().toUpperCase();
     if (!v) return;
     state.restrictionSites.add(v);
     const ch = el('label', {}, el('input',{type:'checkbox', checked:true, class:'resCheck', value:v}), ' ' + v);
     $('#customRes').value = '';
-    // append to param group
     $('.param-group[style*="lav-weak"]').querySelector('div').appendChild(ch);
     refreshRestrictionCheckboxes();
   });
@@ -816,7 +761,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     if (e.target && e.target.classList && e.target.classList.contains('resCheck')) refreshRestrictionCheckboxes();
   });
 
-  /* params reset */
   resetParams.addEventListener('click', () => {
     minProduct.value = 200; maxProduct.value = 300;
     minPrimerLen.value = 18; maxPrimerLen.value = 27;
@@ -833,16 +777,13 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     gcError.style.display = 'none';
   });
 
-  /* live character count & validation for DNA input */
   dnaInput.addEventListener('input', updateCharCount);
   function updateCharCount(){
     const raw = dnaInput.value || '';
     const seq = extractSeq(raw);
     charCount.textContent = `Length: ${seq.length} bp`;
-    // color coding: green if >100 and <100000
     const color = seq.length >= 100 && seq.length <= 100000 ? 'var(--status-green)' : seq.length>100000 ? 'var(--status-red)' : 'var(--status-yellow)';
     charCount.style.color = color;
-    // validation
     if (seq.length === 0) {
       setValidation('');
       return;
@@ -852,7 +793,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     else setValidation('');
   }
 
-  /* validation message setter */
   function setValidation(msg='', type='ok'){
     validationMessage.textContent = msg;
     if (!msg) {
@@ -864,22 +804,14 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     else validationMessage.style.color = 'var(--status-green)';
   }
 
-  /* -------------------------
-     Sequence helpers
-     ------------------------- */
-
-  // Extract plain sequence: remove FASTA header lines and whitespace. Uppercase.
   function extractSeq(raw){
     if (!raw) return '';
-    // remove FASTA headers: lines starting with >
     let lines = raw.split(/\r?\n/);
     lines = lines.filter(l => !l.startsWith('>'));
     let seq = lines.join('').replace(/\s+/g,'').toUpperCase();
-    // allow A,T,G,C,N only in input sequence for scanning, but candidates require A/T/G/C only
     return seq;
   }
 
-  // Valid base check
   const VALID_BASES = new Set(['A','T','G','C','N']);
   function checkValidBases(seq){
     for (let i=0;i<seq.length;i++){
@@ -888,11 +820,9 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     return {ok:true};
   }
 
-  // Complement mapping
   const complementMap = {A:'T',T:'A',G:'C',C:'G',N:'N'};
   function complementBase(b){ return complementMap[b] || 'N'; }
   function reverseComplement(s){
-    // assume uppercase
     let res = '';
     for (let i = s.length -1; i>=0; i--){
       const b = s[i];
@@ -901,23 +831,16 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     return res;
   }
 
-  /* -------------------------
-     Tm & GC calculations exactly as specified
-     ------------------------- */
-
   function calcSimpleTm(primer){
-    // For primers shorter than 14 bp
     let gc = 0, at = 0;
     for (let c of primer){
       if (c==='G' || c==='C') gc++;
       else if (c==='A' || c==='T') at++;
-      else {} // if N present, handle later - but simple formula uses counts of GC and AT
     }
     return 4 * gc + 2 * at;
   }
 
   function calcNNTm(primer){
-    // For primers 14 bp or longer: Tm = 64.9 + 41 * ((GC count - 16.4) / length)
     let gc = 0;
     for (let c of primer){
       if (c==='G' || c==='C') gc++;
@@ -927,7 +850,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
   }
 
   function calcTmExact(primer){
-    // choose formula based on length exactly as specified
     if (primer.length < 14) {
       return {tm: calcSimpleTm(primer), method: 'Simple'};
     } else {
@@ -941,14 +863,10 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       if (c==='G' || c==='C') gc++;
     }
     const pct = ( (gc / primer.length) * 100 );
-    return Math.round(pct*10)/10; // one decimal place
+    return Math.round(pct*10)/10;
   }
 
-  /* -------------------------
-     Homopolymer detection exactly as specified
-     ------------------------- */
   function detectHomopolymers(primer, maxAllowed){
-    // Scan primer character by character. Find consecutive identical bases.
     const issues = [];
     const L = primer.length;
     let i=0;
@@ -956,31 +874,29 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       let j = i+1;
       while (j < L && primer[j] === primer[i]) j++;
       const runLen = j - i;
-      if (runLen >= maxAllowed){ // equals parameter => warning, exceeds => fail
-        const posStart = i+1; // 1-based
-        const posEnd = j; // 1-based
+      if (runLen >= maxAllowed){
+        const posStart = i+1;
+        const posEnd = j;
         const severity = runLen === maxAllowed ? 'warning' : 'fail';
         issues.push({base: primer[i], length: runLen, start: posStart, end: posEnd, severity});
       }
       i = j;
     }
-    return issues; // may be empty
+    return issues;
   }
 
-  /* -------------------------
-     Hairpin formation calculation exactly as specified
-     ------------------------- */
+  /* ===== HAIRPIN FIX ===== */
   function hairpinPotential(primer){
-    // Take last 5 bases exactly
     const L = primer.length;
-    const last5 = primer.slice(Math.max(0, L-5), L).padStart(5, 'N'); // ensure length 5 if primer shorter - but algorithm says last 5 bases exactly as they appear, so for primers <5 we still take whatever present
-    const rc = reverseComplement(last5); // reverse complement of last 5
-    // Search within first 15 bases of primer for this exact reverse complement sequence
+    // FIXED: For primers < 5 bp, skip hairpin check
+    if (L < 5) return {risk: 'None', matchPct: 0, pos: -1};
+    // Take last 5 bases exactly as they appear
+    const last5 = primer.slice(L-5, L);
+    const rc = reverseComplement(last5);
     const searchRegion = primer.slice(0, Math.min(15, primer.length));
-    // Perform approximate match: we search for exact substring match of rc with sliding window of length 5
+    
     let bestMatch = {matched:0, pos:-1};
     for (let i=0; i <= searchRegion.length - 1; i++){
-      // we will compare rc length (5) sliding, but if near end maybe partial; still compute matched bases
       let matched = 0;
       for (let j=0; j<5; j++){
         if (i+j >= searchRegion.length) break;
@@ -995,20 +911,14 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     else if (matchPct >= 40) risk = 'Moderate';
     else if (matchPct >= 20) risk = 'Low';
     else risk = 'None';
-    return {risk, matchPct, pos: bestMatch.pos}; // pos is 1-based index where match begins in primer, may be -1 if none
+    return {risk, matchPct, pos: bestMatch.pos};
   }
 
-  /* -------------------------
-     Primer dimer calculation exactly as specified
-     ------------------------- */
   function primerDimerPotential(forwardPrimer, reversePrimer){
-    // For forward primer, identify 3' end = last 8 bases of forward primer sequence
     const f3 = forwardPrimer.slice(Math.max(0, forwardPrimer.length - 8));
-    // For reverse primer, calculate reverse complement of entire reverse primer sequence
-    const rcRev = reverseComplement(reversePrimer); // rc of reverse primer
-    // identify 5' end of this reverse complement = first 8 bases of rcRev
+    const rcRev = reverseComplement(reversePrimer);
     const rc5 = rcRev.slice(0, 8);
-    // Compare f3 vs rc5 position by position from 1 until mismatch, count consecutive matching base pairs starting from position 1
+    
     let matchCount = 0;
     for (let i=0; i < Math.min(8, f3.length, rc5.length); i++){
       if (f3[i] === rc5[i]) matchCount++;
@@ -1016,7 +926,7 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     }
     const scorePct = Math.round((matchCount / 8) * 100);
     let risk = 'Low';
-    if (matchCount >= 4) {
+    if (matchCount >= 4){
       if (scorePct >= 75) risk = 'High';
       else if (scorePct >= 50) risk = 'Moderate';
       else risk = 'Low';
@@ -1026,11 +936,7 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     return {matchCount, scorePct, risk};
   }
 
-  /* -------------------------
-     GC clamp check exactly as specified
-     ------------------------- */
   function gcClampStatus(primer){
-    // Check first and last character
     const first = primer[0];
     const last = primer[primer.length - 1];
     const isFirstGC = first === 'G' || first === 'C';
@@ -1041,19 +947,11 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     return {status:'Absent', level:'FAIL'};
   }
 
-  /* -------------------------
-     Product size calculation
-     ------------------------- */
   function productSize(forwardStart1Based, reverseStart1Based){
-    // Product Size = Reverse Position - Forward Position + 1
     return (reverseStart1Based - forwardStart1Based + 1);
   }
 
-  /* -------------------------
-     Candidate generation process (steps 3 & 4 exactly)
-     ------------------------- */
   function generatePrimers(targetSeq, params){
-    // Validate inputs already done; generate candidates
     const L = targetSeq.length;
     const fwdCandidates = [];
     const revCandidates = [];
@@ -1061,10 +959,9 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     const minL = params.minPrimerLen;
     const maxL = params.maxPrimerLen;
 
-    // Helper to test candidate meets basic criteria: contains only A/T/G/C (no N), GC within range, Tm within range
     function passesBasic(seq){
       for (let c of seq){
-        if (!(c === 'A' || c === 'T' || c === 'G' || c === 'C')) return false; // must be only A/T/G/C
+        if (!(c === 'A' || c === 'T' || c === 'G' || c === 'C')) return false;
       }
       const gcPercent = calcGCPercent(seq);
       if (gcPercent < params.minGC || gcPercent > params.maxGC) return false;
@@ -1074,18 +971,15 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       return true;
     }
 
-    // Forward primer scanning: scan left to right positions 0..L-minL
     for (let i=0; i <= L - minL; i++){
-      // for each start, attempt lengths minL..maxL but ensure within bounds
       for (let len = minL; len <= maxL && i + len <= L; len++){
         const seq = targetSeq.slice(i, i+len);
         if (!passesBasic(seq)) continue;
-        // store candidate with attributes
         const tmObj = calcTmExact(seq);
         const tm = Math.round(tmObj.tm*10)/10;
         const gc = calcGCPercent(seq);
         fwdCandidates.push({
-          start: i+1, // 1-based
+          start: i+1,
           seq,
           len,
           tm,
@@ -1095,25 +989,18 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       }
     }
 
-    // Reverse primers: for reverse primers, iterate start position on original forward strand p from 0..L-minL
-    // at each p, create primerSeq = reverseComplement(original.substr(p, len)) (this gives 5'->3' primer sequence)
     for (let p=0; p <= L - minL; p++){
       for (let len = minL; len <= maxL && p + len <= L; len++){
-        const origSub = targetSeq.slice(p, p+len); // original forward strand segment where reverse primer binds (5'->3' on forward)
-        // primer sequence to present is reverse complement of origSub:
+        const origSub = targetSeq.slice(p, p+len);
         const primerSeq = reverseComplement(origSub);
-        // primer candidates must contain only A/T/G/C (reverseComplement of A/T/G/C also is A/T/G/C)
-        // but we were told candidate must contain only A/T/G/C; origSub may contain N; reject if N present in origSub
         let hasInvalid=false;
         for (let ch of origSub){ if (ch !== 'A' && ch !== 'T' && ch !== 'G' && ch !== 'C') { hasInvalid = true; break; } }
         if (hasInvalid) continue;
-        // check GC and Tm constraints on primerSeq
         const gc = calcGCPercent(primerSeq);
         const tmObj = calcTmExact(primerSeq);
         const tm = Math.round(tmObj.tm*10)/10;
         if (gc < params.minGC || gc > params.maxGC) continue;
         if (tm < params.minTm || tm > params.maxTm) continue;
-        // store with start position defined as p+1 (1-based) on forward strand (leftmost base of the binding region)
         revCandidates.push({
           start: p+1,
           seq: primerSeq,
@@ -1128,80 +1015,53 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     return {fwdCandidates, revCandidates};
   }
 
-  /* -------------------------
-     Pairing, checking secondary structure, GC clamp, filtering (Steps 8-10)
-     ------------------------- */
-
   function evaluatePairs(fwdCandidates, revCandidates, params, targetLen){
     const pairs = [];
-    // For efficiency, index revCandidates by start position for quick product size calc (though we'll iterate combinations)
-    // We must create all possible combinations and then filter by product size and tm diff etc.
     for (let f of fwdCandidates){
       for (let r of revCandidates){
-        // product size formula uses Reverse Position - Forward Position +1 (both 1-based)
         const product = productSize(f.start, r.start);
-        // product must be positive (reverse must be downstream of forward)
         if (product <= 0) continue;
-        // check product size within user-specified
         if (product < params.minProduct || product > params.maxProduct) continue;
-        // Compute tm difference absolute
         const tmDiff = Math.abs(Math.round((f.tm - r.tm)*10)/10);
-        // If tm difference exceeds max allowed, mark warning or fail? The specification: flag pairs exceeding limit with yellow warning. Eliminate pairs with red fail if any exists.
-        // We'll treat exceeding maxTmDiff as WARNING (not elimination), but the algorithm steps said eliminate pairs with red fail if any exists. Later they said check if Tm difference within user-specified maximum limit -> flag within limit with green pass; flag exceeding limit with yellow warning. Eliminate pairs with red fail if any exists. So we don't eliminate by tm diff unless other fails.
-        // Now do secondary structure checks if enabled
-        const f_homo = detectHomopolymers(f.seq, params.maxHomopolymer); // returns issues array
+
+        const f_homo = detectHomopolymers(f.seq, params.maxHomopolymer);
         const r_homo = detectHomopolymers(r.seq, params.maxHomopolymer);
-        // homopolymer severity: any 'fail' in either candidate -> eliminate pair
         const homoFail = f_homo.some(x => x.severity==='fail') || r_homo.some(x=>x.severity==='fail');
-        if (homoFail) continue; // eliminate pair with fail
+        if (homoFail) continue;
         const homoWarnings = f_homo.concat(r_homo).filter(x => x.severity==='warning');
 
-        // GC clamp if enabled
         let gcClampResultF = null, gcClampResultR = null;
         if (params.gcClamp){
           gcClampResultF = gcClampStatus(f.seq);
           gcClampResultR = gcClampStatus(r.seq);
-          // if either is FAIL, eliminate pair
           if (gcClampResultF.level === 'FAIL' || gcClampResultR.level === 'FAIL') continue;
         }
 
-        // secondary structure: hairpin for each primer
         let hairpinF = null, hairpinR = null;
         if (params.secondaryStructure){
           hairpinF = hairpinPotential(f.seq);
           hairpinR = hairpinPotential(r.seq);
-          // hairpin high risk should eliminate pair
           if (hairpinF.risk === 'High' || hairpinR.risk === 'High') continue;
         }
 
-        // primer dimer check
         let dimer = null;
         if (params.secondaryStructure){
           dimer = primerDimerPotential(f.seq, r.seq);
-          // if dimer risk high -> eliminate pair
           if (dimer.risk === 'High') continue;
         }
 
-        // At this point the pair passes elimination filters
-        // Determine status badges: combine parameter statuses
         const paramIssues = [];
-        // Check Tm within range for each primer already done in candidate generation; but check for being within optimal closeness too
-        if (tmDiff <= params.maxTmDiff) {
-          // good
-        } else {
+        if (tmDiff > params.maxTmDiff) {
           paramIssues.push({type:'Tm difference', level:'warning', text:`Tm difference ${tmDiff}°C exceeds max allowed ${params.maxTmDiff}°C`});
         }
 
-        // GC warnings (candidates could be on edge)
         if (f.gc < params.minGC || f.gc > params.maxGC) paramIssues.push({type:'GC', level:'fail', text:`Forward GC ${f.gc}% outside allowed range`});
         if (r.gc < params.minGC || r.gc > params.maxGC) paramIssues.push({type:'GC', level:'fail', text:`Reverse GC ${r.gc}% outside allowed range`});
 
-        // homopolymer warnings (equal to param)
         homoWarnings.forEach(h => {
           paramIssues.push({type:'Homopolymer', level:'warning', text:`${h.length} consecutive ${h.base} bases at position ${h.start}-${h.end}`});
         });
 
-        // hairpin moderate/low
         if (hairpinF && (hairpinF.risk === 'Moderate' || hairpinF.risk === 'Low')){
           paramIssues.push({type:'Hairpin (F)', level: hairpinF.risk === 'Moderate' ? 'warning' : 'info', text: `Forward primer hairpin risk ${hairpinF.risk} - ${hairpinF.matchPct}% complementarity at position ${hairpinF.pos}`});
         }
@@ -1209,29 +1069,24 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
           paramIssues.push({type:'Hairpin (R)', level: hairpinR.risk === 'Moderate' ? 'warning' : 'info', text: `Reverse primer hairpin risk ${hairpinR.risk} - ${hairpinR.matchPct}% complementarity at position ${hairpinR.pos}`});
         }
 
-        // primer dimer moderate/low
         if (dimer && (dimer.risk === 'Moderate' || dimer.risk === 'Low')){
           paramIssues.push({type:'Dimer', level: dimer.risk === 'Moderate' ? 'warning' : 'info', text: `Primer dimer potential ${dimer.risk} - ${dimer.scorePct}% similarity at 3' ends`});
         }
 
-        // GC clamp partial warnings
         if (gcClampResultF && gcClampResultF.level === 'WARNING') paramIssues.push({type:'GC Clamp (F)', level:'warning', text:`Forward: ${gcClampResultF.status}`});
         if (gcClampResultR && gcClampResultR.level === 'WARNING') paramIssues.push({type:'GC Clamp (R)', level:'warning', text:`Reverse: ${gcClampResultR.status}`});
 
-        // A final overall status
         let overall = 'PASS';
         if (paramIssues.some(x=> x.level === 'fail')) overall = 'FAIL';
         else if (paramIssues.some(x=> x.level === 'warning')) overall = 'WARNING';
 
-        // Score and bonus ranking
         let score = 0;
         if (overall === 'PASS') score += 100;
         else if (overall === 'WARNING') score += 60;
         else score += 10;
-        // bonus for closeness to optTm and mid-range GC
         const avgTm = (f.tm + r.tm) / 2;
         const tmDiffToOpt = Math.abs(avgTm - params.optTm);
-        score -= Math.round(tmDiffToOpt * 2); // penalize deviation
+        score -= Math.round(tmDiffToOpt * 2);
         const avgGC = (f.gc + r.gc)/2;
         score -= Math.round(Math.abs(avgGC - ((params.minGC + params.maxGC)/2)) * 0.5);
 
@@ -1253,69 +1108,123 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       }
     }
 
-    // Now sort by score descending
     pairs.sort((a,b)=> b.score - a.score);
     return pairs;
   }
 
-  /* -------------------------
-     Ranking & selecting top N pairs (Step 11)
-     ------------------------- */
   function selectTopPairs(pairs, N){
     if (pairs.length === 0) return [];
     return pairs.slice(0, N);
   }
 
-  /* -------------------------
-     Prepare display output for each selected primer pair (Step 12)
-     ------------------------- */
+  function calcSuccessScore(primer, params, isForward){
+    // Calculate quality score 0-100 for a primer
+    let score = 100;
+    const tmObj = calcTmExact(primer.seq);
+    const tm = tmObj.tm;
+    const gc = primer.gc;
+    
+    // Tm deviation from optimal
+    const tmDev = Math.abs(tm - params.optTm);
+    if (tmDev > 5) score -= 15;
+    else if (tmDev > 2) score -= 8;
+    
+    // GC content deviation from middle of range
+    const gcOptimal = (params.minGC + params.maxGC) / 2;
+    const gcDev = Math.abs(gc - gcOptimal);
+    if (gcDev > 10) score -= 10;
+    else if (gcDev > 5) score -= 5;
+    
+    // Length preference (18-22 is ideal)
+    const len = primer.len;
+    if (len < 18 || len > 23) score -= 5;
+    
+    // Homopolymer runs
+    const homos = detectHomopolymers(primer.seq, params.maxHomopolymer);
+    if (homos.length > 0) score -= 10 * homos.length;
+    
+    // GC Clamp
+    if (params.gcClamp){
+      const gcClamp = gcClampStatus(primer.seq);
+      if (gcClamp.level === 'WARNING') score -= 5;
+    }
+    
+    // Secondary structure
+    if (params.secondaryStructure){
+      const hairpin = hairpinPotential(primer.seq);
+      if (hairpin.risk === 'Moderate') score -= 8;
+      else if (hairpin.risk === 'Low') score -= 3;
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
   function renderResults(pairs, params, targetSeq){
     resultsList.innerHTML = '';
     if (!pairs || pairs.length === 0){
       resultsArea.style.display = 'block';
       resultsList.innerHTML = '';
       foundMessage.textContent = 'No suitable primer pairs found with current parameters.';
+      expandResultsBtn.style.display = 'none';
       return;
     }
+    
+    // Show only top 3
+    const topPairs = pairs.slice(0, 3);
+    
     emptyState.style.display = 'none';
     resultsArea.style.display = 'block';
-    foundMessage.textContent = `Found ${pairs.length} primer pair(s). Showing top ${pairs.length > params.pairsCount ? params.pairsCount : pairs.length}.`;
+    foundMessage.textContent = `Found ${pairs.length} primer pair(s). Showing top 3 best options.`;
+    expandResultsBtn.style.display = 'inline-block';
+    
+    state.lastResults = {pairs, params, targetSeq};
 
-    // For each pair build card
-    pairs.forEach((p, idx) => {
-      const card = el('div', {class:'pair-card'});
-      // add show animation staggered
+    topPairs.forEach((p, idx) => {
+      const fScore = calcSuccessScore(p.forward, params, true);
+      const rScore = calcSuccessScore(p.reverse, params, false);
+      const avgScore = Math.round((fScore + rScore) / 2);
+      
+      const card = el('div', {class:`pair-card ${idx === 0 ? 'top-choice' : ''}`});
       setTimeout(()=> card.classList.add('show'), idx*120);
 
-      const header = el('div', {style:'display:flex;justify-content:space-between;align-items:center'});
-      header.appendChild(el('div', {style:'font-weight:700'}, `Primer Pair ${idx+1}`));
+      const header = el('div', {style:'display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap'});
+      const titleDiv = el('div', {});
+      titleDiv.appendChild(el('div', {style:'font-weight:700;font-size:16px'}, `Primer Pair ${idx+1} ${idx === 0 ? '🏆 Best' : ''}`));
+      titleDiv.appendChild(el('div', {class:'muted', style:'margin-top:3px'}, `Success: ${avgScore}% (Fwd: ${Math.round(fScore)}% | Rev: ${Math.round(rScore)}%)`));
+      header.appendChild(titleDiv);
+      
       const overallBadge = el('div', {class:`badge ${p.overall==='PASS' ? 'pass' : p.overall==='WARNING' ? 'warn' : 'fail'}`}, `${p.overall==='PASS' ? '✔ PASS' : p.overall==='WARNING' ? '⚠ WARNING' : '✖ FAIL'}`);
       header.appendChild(overallBadge);
       card.appendChild(header);
 
-      // forward and reverse boxes
       const primerRow = el('div', {class:'primer-row'});
       const fbox = el('div', {class:'primer-box fwd'});
       const rbox = el('div', {class:'primer-box rev'});
-      fbox.appendChild(el('div', {style:'font-weight:600'}, "Forward Primer (5' → 3')"));
+      
+      fbox.appendChild(el('div', {style:'font-weight:600;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center'}, 
+        el('div', {}, "Forward Primer (5' → 3')"),
+        el('div', {style:`background:${Math.round(fScore)>70 ? 'var(--status-green)' : Math.round(fScore)>50 ? 'var(--status-yellow)' : 'var(--status-red)'};color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600`}, `${Math.round(fScore)}%`)
+      ));
       fbox.appendChild(el('div', {class:'seq'}, `5' → ${p.forward.seq} ← 3'`));
       fbox.appendChild(el('div', {class:'meta-grid'},
         el('div', {}, `Length: ${p.forward.len} bp`),
         el('div', {}, `Tm: ${p.forward.tm} °C (${p.forward.tmMethod})`),
         el('div', {}, `GC: ${p.forward.gc} %`),
-        el('div', {}, `Start Position: ${p.forward.start} bp`)
+        el('div', {}, `Position: ${p.forward.start} bp`)
       ));
-      // status small
       const fstatus = p.gcClampResultF ? p.gcClampResultF.status : 'Not checked';
       fbox.appendChild(el('div', {class:'muted'}, `GC Clamp: ${fstatus}`));
 
-      rbox.appendChild(el('div', {style:'font-weight:600'}, "Reverse Primer (5' → 3')"));
+      rbox.appendChild(el('div', {style:'font-weight:600;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center'}, 
+        el('div', {}, "Reverse Primer (5' → 3')"),
+        el('div', {style:`background:${Math.round(rScore)>70 ? 'var(--status-green)' : Math.round(rScore)>50 ? 'var(--status-yellow)' : 'var(--status-red)'};color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600`}, `${Math.round(rScore)}%`)
+      ));
       rbox.appendChild(el('div', {class:'seq'}, `5' → ${p.reverse.seq} ← 3'`));
       rbox.appendChild(el('div', {class:'meta-grid'},
         el('div', {}, `Length: ${p.reverse.len} bp`),
         el('div', {}, `Tm: ${p.reverse.tm} °C (${p.reverse.tmMethod})`),
         el('div', {}, `GC: ${p.reverse.gc} %`),
-        el('div', {}, `Start Position: ${p.reverse.start} bp`)
+        el('div', {}, `Position: ${p.reverse.start} bp`)
       ));
       const rstatus = p.gcClampResultR ? p.gcClampResultR.status : 'Not checked';
       rbox.appendChild(el('div', {class:'muted'}, `GC Clamp: ${rstatus}`));
@@ -1324,14 +1233,12 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       primerRow.appendChild(rbox);
       card.appendChild(primerRow);
 
-      // combined info
       const combo = el('div', {style:'display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap'});
       combo.appendChild(el('div', {}, `Expected PCR product size: ${p.product} bp`));
       combo.appendChild(el('div', {}, `Tm Difference: ${p.tmDiff} °C`));
       combo.appendChild(el('div', {}, `Compatibility: ${p.overall === 'PASS' ? 'Compatible' : p.overall === 'WARNING' ? 'Possibly compatible' : 'Incompatible'}`));
       card.appendChild(combo);
 
-      // Warnings section listing paramIssues
       if (p.paramIssues && p.paramIssues.length > 0){
         const warns = el('div', {class:'warnings'});
         p.paramIssues.forEach(pi => {
@@ -1342,7 +1249,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
         card.appendChild(warns);
       }
 
-      // restriction sites check in primers
       const restrictionFinds = checkRestrictionSitesInPair(p, state.restrictionSites);
       if (restrictionFinds.length > 0){
         const rdiv = el('div', {style:'margin-top:8px'}, el('div',{style:'font-weight:600'}, 'Restriction Site Matches'));
@@ -1352,13 +1258,11 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
         card.appendChild(rdiv);
       }
 
-      // gradient suggestion
       const gradient = suggestTemperatureGradient(p);
       const gradDiv = el('div', {style:'margin-top:8px'}, el('div',{style:'font-weight:600'}, 'Suggested Gradient PCR Temperatures'));
       gradDiv.appendChild(el('div',{class:'muted'}, gradient.join(', ')));
       card.appendChild(gradDiv);
 
-      // actions: copy, copy sequences only, save, export
       const actions = el('div',{class:'actions-row', style:'margin-top:8px'});
       const copyBtn = el('button',{class:'action-btn copy-btn'}, 'Copy Sequences');
       const copySeqOnlyBtn = el('button',{class:'action-btn'}, 'Copy Just Sequences');
@@ -1370,7 +1274,6 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
       actions.appendChild(exportBtn);
       card.appendChild(actions);
 
-      // copy functionality
       copyBtn.addEventListener('click', async () => {
         const txt = formatPrimerPairForCopy(p, idx+1);
         try{
@@ -1414,20 +1317,10 @@ ATGCGTACGATCGATCGATCGGATCTAGCTAGCTAGCGATCGATGCATGCTAGCTAGCTAGCTGATCAGCTGATCGTAGC
     });
   }
 
-  /* Format copy text */
   function formatPrimerPairForCopy(p, pairIndex){
-    return `Primer Pair ${pairIndex}
-Forward Primer 5'→3': ${p.forward.seq}
-Length: ${p.forward.len} bp; Tm: ${p.forward.tm} °C (${p.forward.tmMethod}); GC: ${p.forward.gc} %
-Reverse Primer 5'→3': ${p.reverse.seq}
-Length: ${p.reverse.len} bp; Tm: ${p.reverse.tm} °C (${p.reverse.tmMethod}); GC: ${p.reverse.gc} %
-Expected PCR Product Size: ${p.product} bp
-Tm Difference: ${p.tmDiff} °C
-Overall Status: ${p.overall}
-`;
+    return `Primer Pair ${pairIndex}\nForward Primer 5'→3': ${p.forward.seq}\nLength: ${p.forward.len} bp; Tm: ${p.forward.tm} °C (${p.forward.tmMethod}); GC: ${p.forward.gc} %\nReverse Primer 5'→3': ${p.reverse.seq}\nLength: ${p.reverse.len} bp; Tm: ${p.reverse.tm} °C (${p.reverse.tmMethod}); GC: ${p.reverse.gc} %\nExpected PCR Product Size: ${p.product} bp\nTm Difference: ${p.tmDiff} °C\nOverall Status: ${p.overall}\n`;
   }
 
-  /* export as CSV */
   function exportPairAsCSV(p, idx){
     const headers = ['PairID','ForwardSeq','ForwardLen','ForwardTm','ForwardTmMethod','ForwardGC','ForwardStart','ReverseSeq','ReverseLen','ReverseTm','ReverseTmMethod','ReverseGC','ReverseStart','ProductSize','TmDifference','OverallStatus'];
     const values = [
@@ -1461,14 +1354,10 @@ Overall Status: ${p.overall}
     a.remove(); URL.revokeObjectURL(url);
   }
 
-  /* -------------------------
-     Restriction site checking
-     ------------------------- */
   function checkRestrictionSitesInPair(pair, sitesSet){
     const out = [];
     const sites = Array.from(sitesSet);
     sites.forEach(site => {
-      // forward seq
       const idxF = pair.forward.seq.indexOf(site);
       if (idxF !== -1) out.push({which:'Forward', site, pos: idxF+1});
       const idxR = pair.reverse.seq.indexOf(site);
@@ -1477,23 +1366,14 @@ Overall Status: ${p.overall}
     return out;
   }
 
-  /* -------------------------
-     Temperature gradient suggestion
-     ------------------------- */
   function suggestTemperatureGradient(pair){
-    // Suggest gradient range as +/- 2-3 degrees around calculated optimal temperature.
-    // Use average Tm as center.
     const avgTm = Math.round(((pair.forward.tm + pair.reverse.tm)/2)*10)/10;
-    // make 5 conditions spanning avgTm-4 to avgTm+4 in steps of 2
     const start = Math.round((avgTm - 4));
     const temps = [];
     for (let t = start; t <= start + 8; t += 2) temps.push(`${t}°C`);
     return temps;
   }
 
-  /* -------------------------
-     Saving / localStorage
-     ------------------------- */
   function loadSavedPrimers(){
     try{
       const raw = localStorage.getItem('primer_design_saved_v1');
@@ -1518,7 +1398,6 @@ Overall Status: ${p.overall}
       const left = el('div', {}, el('div',{style:'font-weight:700'}, s.name), el('div',{class:'muted'}, new Date(s.timestamp).toLocaleString()));
       const actions = el('div', {style:'display:flex;gap:6px'}, el('button',{class:'small-btn'}, 'View'), el('button',{class:'small-btn'}, 'Delete'));
       actions.children[0].addEventListener('click', ()=> {
-        // show modal/details
         const txt = `Name: ${s.name}\nSaved: ${new Date(s.timestamp).toLocaleString()}\n\nForward: ${s.pair.forward.seq}\nReverse: ${s.pair.reverse.seq}\nProduct Size: ${s.pair.product}\nOverall: ${s.pair.overall}`;
         alert(txt);
       });
@@ -1532,9 +1411,124 @@ Overall Status: ${p.overall}
 
   viewSavedBtn.addEventListener('click', () => {
     renderSavedList();
-    // scroll to savedList
     savedList.scrollIntoView({behavior:'smooth', block:'center'});
   });
+
+  expandResultsBtn.addEventListener('click', () => {
+    if (!state.lastResults) return;
+    const {pairs, params, targetSeq} = state.lastResults;
+    const html = generateFullResultsHTML(pairs, params);
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(html);
+    newWindow.document.close();
+  });
+
+  function generateFullResultsHTML(pairs, params){
+    let html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DNA Primer Design - Full Results</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; margin: 0; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { color: #2c3e50; border-bottom: 3px solid #27ae60; padding-bottom: 10px; }
+    .pair-container { background: white; margin: 20px 0; padding: 18px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
+    .pair-container.best { border-left-color: #27ae60; background: #f0fff4; }
+    .primer-section { margin: 12px 0; padding: 12px; background: #f9f9f9; border-radius: 6px; }
+    .primer-header { font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .score-badge { padding: 6px 12px; border-radius: 4px; font-weight: bold; color: white; font-size: 14px; }
+    .score-high { background: #27ae60; }
+    .score-med { background: #f39c12; }
+    .score-low { background: #e74c3c; }
+    .seq { font-family: monospace; background: white; padding: 8px; border-radius: 4px; word-break: break-all; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #34495e; color: white; }
+    tr:hover { background: #f5f5f5; }
+    .status { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .pass { background: #27ae60; color: white; }
+    .warn { background: #f39c12; color: white; }
+    .fail { background: #e74c3c; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DNA Primer Design - Complete Results</h1>
+    <p>Generated: ${new Date().toLocaleString()}</p>
+    <p>Total primer pairs found: ${pairs.length}</p>
+`;
+
+    pairs.forEach((p, idx) => {
+      const fScore = calcSuccessScore(p.forward, params, true);
+      const rScore = calcSuccessScore(p.reverse, params, false);
+      const avgScore = Math.round((fScore + rScore) / 2);
+      const scoreClass = avgScore > 70 ? 'score-high' : avgScore > 50 ? 'score-med' : 'score-low';
+      
+      html += `
+    <div class="pair-container ${idx === 0 ? 'best' : ''}">
+      <h2>Primer Pair ${idx+1} ${idx === 0 ? '🏆 BEST CHOICE' : ''}</h2>
+      <p><strong>Overall Status:</strong> <span class="status ${p.overall.toLowerCase()}">${p.overall}</span></p>
+      <p><strong>Success Score:</strong> <span class="score-badge ${scoreClass}">${avgScore}%</span></p>
+      
+      <div class="primer-section">
+        <div class="primer-header">
+          Forward Primer (5' → 3')
+          <span class="score-badge ${fScore>70 ? 'score-high' : fScore>50 ? 'score-med' : 'score-low'}">${Math.round(fScore)}%</span>
+        </div>
+        <div class="seq">5' → ${p.forward.seq} ← 3'</div>
+        <table>
+          <tr><th>Property</th><th>Value</th></tr>
+          <tr><td>Length</td><td>${p.forward.len} bp</td></tr>
+          <tr><td>Tm</td><td>${p.forward.tm}°C (${p.forward.tmMethod})</td></tr>
+          <tr><td>GC Content</td><td>${p.forward.gc}%</td></tr>
+          <tr><td>Start Position</td><td>${p.forward.start} bp</td></tr>
+          <tr><td>GC Clamp</td><td>${p.gcClampResultF ? p.gcClampResultF.status : 'Not checked'}</td></tr>
+        </table>
+      </div>
+
+      <div class="primer-section">
+        <div class="primer-header">
+          Reverse Primer (5' → 3')
+          <span class="score-badge ${rScore>70 ? 'score-high' : rScore>50 ? 'score-med' : 'score-low'}">${Math.round(rScore)}%</span>
+        </div>
+        <div class="seq">5' → ${p.reverse.seq} ← 3'</div>
+        <table>
+          <tr><th>Property</th><th>Value</th></tr>
+          <tr><td>Length</td><td>${p.reverse.len} bp</td></tr>
+          <tr><td>Tm</td><td>${p.reverse.tm}°C (${p.reverse.tmMethod})</td></tr>
+          <tr><td>GC Content</td><td>${p.reverse.gc}%</td></tr>
+          <tr><td>Start Position</td><td>${p.reverse.start} bp</td></tr>
+          <tr><td>GC Clamp</td><td>${p.gcClampResultR ? p.gcClampResultR.status : 'Not checked'}</td></tr>
+        </table>
+      </div>
+
+      <table>
+        <tr><th>PCR Details</th><th>Value</th></tr>
+        <tr><td>Expected Product Size</td><td>${p.product} bp</td></tr>
+        <tr><td>Tm Difference</td><td>${p.tmDiff}°C</td></tr>
+        <tr><td>Compatibility</td><td>${p.overall === 'PASS' ? 'Compatible' : p.overall === 'WARNING' ? 'Possibly compatible' : 'Incompatible'}</td></tr>
+      </table>
+
+      ${p.paramIssues && p.paramIssues.length > 0 ? `
+      <div style="margin-top: 12px; padding: 10px; background: #fff3cd; border-radius: 4px;">
+        <strong>⚠ Alerts:</strong>
+        <ul style="margin: 6px 0 0 20px;">
+          ${p.paramIssues.map(pi => `<li>${pi.type} - ${pi.text}</li>`).join('')}
+        </ul>
+      </div>
+      ` : ''}
+    </div>
+`;
+    });
+
+    html += `
+  </div>
+</body>
+</html>`;
+    return html;
+  }
 
   exportAllBtn.addEventListener('click', () => {
     if (!state.saved || state.saved.length === 0) { alert('No saved primers to export.'); return; }
@@ -1549,16 +1543,11 @@ Overall Status: ${p.overall}
     downloadTextFile(csvRows.join('\n'), 'saved_primers.csv');
   });
 
-  /* -------------------------
-     Design button main flow (Steps 1-12)
-     ------------------------- */
   designBtn.addEventListener('click', async () => {
-    // Prevent multiple clicks
     designBtn.disabled = true;
     designBtn.classList.add('clicked');
     setTimeout(()=> { designBtn.disabled = false; designBtn.classList.remove('clicked'); }, 800);
 
-    // Step 1: Validate input sequence
     const raw = dnaInput.value || '';
     const seq = extractSeq(raw);
     if (!seq || seq.length === 0) {
@@ -1572,47 +1561,31 @@ Overall Status: ${p.overall}
       showError(`Error - Invalid DNA base found at position ${baseCheck.pos}. Found character '${baseCheck.char}'. Only A, T, G, C, N allowed.`); return;
     }
 
-    // Step 2: Validate Parameters
     const params = readParams();
     const paramValid = validateParams(params);
     if (!paramValid.ok) { showError(paramValid.msg); return; }
 
-    // Show loading
     emptyState.style.display = 'none';
     resultsArea.style.display = 'none';
     loadingBox.style.display = 'flex';
     loadingText.textContent = 'Designing primers — please wait...';
 
-    // Do heavy calculation in a small setTimeout to allow UI update (no web workers here)
     setTimeout(()=> {
-      // Step 3 & 4: generate candidates
       const {fwdCandidates, revCandidates} = generatePrimers(seq, params);
-
-      // Step 5 & 6 already computed tm and gc during generation
-      // Step 7: homopolymer checks applied later during pairing
-
-      // Step 8-10: pairing and checks
       const allPairs = evaluatePairs(fwdCandidates, revCandidates, params, seq.length);
-
-      // Step 11: ranking and select top N
       const top = selectTopPairs(allPairs, params.pairsCount);
 
-      // Step 12: prepare output and show results
       loadingBox.style.display = 'none';
-      // Render results
       renderResults(top, params, seq);
 
-      // show restriction summary & gradient
       const allResMatches = [];
       top.forEach(p => {
         const res = checkRestrictionSitesInPair(p, state.restrictionSites);
         res.forEach(rf => allResMatches.push(`${rf.which}: ${rf.site} at ${rf.pos}`));
       });
       restrictionSummary.textContent = allResMatches.length ? 'Restriction sites found: ' + allResMatches.join('; ') : 'No selected restriction sites found in top primer pairs.';
-      // gradient summary from first pair
       gradientSummary.textContent = top.length ? 'Example gradient: ' + suggestTemperatureGradient(top[0]).join(', ') : '';
 
-      // If found fewer than requested, inform user
       if (top.length < params.pairsCount) {
         foundMessage.textContent = `Found ${top.length} suitable primer pairs instead of requested ${params.pairsCount} pairs due to strict parameters.`;
       }
@@ -1627,7 +1600,6 @@ Overall Status: ${p.overall}
     resultsList.innerHTML = '';
     foundMessage.textContent = '';
     emptyState.style.display = 'none';
-    // display as bright red message at top of results card
     resultsList.innerHTML = `<div style="padding:12px;border-radius:10px;background:rgba(255,240,240,1);border:1px solid rgba(255,200,200,1)">${msg}</div>`;
     designBtn.disabled = false;
   }
@@ -1653,7 +1625,6 @@ Overall Status: ${p.overall}
   }
 
   function validateParams(p){
-    // Validate ranges and logical consistency with messages exactly as specified
     if (p.minProduct < 100) return {ok:false, msg: `Error - Minimum PCR product size must be at least 100 bp.`};
     if (p.maxProduct > 50000) return {ok:false, msg: `Error - Maximum PCR product size must be ≤ 50000 bp.`};
     if (p.maxProduct <= p.minProduct) return {ok:false, msg: `Error - Maximum PCR product size must be greater than minimum.`};
@@ -1676,28 +1647,21 @@ Overall Status: ${p.overall}
     return {ok:true};
   }
 
-  /* -------------------------
-     On load: initial UI setup
-     ------------------------- */
   function init(){
     updateCharCount();
     renderSavedList();
-    // animate header and cards with stagger
     setTimeout(()=> $('.header').style.opacity = 1, 10);
 
-    // accessibility: allow keyboard toggles
     $$('.toggle').forEach(t => {
       t.addEventListener('keydown', (e)=> {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleElement(t); }
       });
     });
 
-    // allow keyboard focus on results cards copy
     document.addEventListener('keydown', (e)=> {
       if (e.key === 'F2') { designBtn.click(); }
     });
 
-    // small: refresh restriction checkboxes initial
     refreshRestrictionCheckboxes();
   }
 
