@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo App</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+    .container { width: 100%; max-width: 600px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    ul { list-style-type: none; padding: 0; }
+    li { padding: 10px; background: #eee; margin-bottom: 5px; display: flex; justify-content: space-between; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Todo App</h2>
+    <input type="text" id="newTodo" placeholder="Enter new todo" />
+    <button onclick="addTodo()">Add Todo</button>
+    <ul id="todoList"></ul>
+    <button onclick="clearAll()">Clear All</button>
+  </div>
+
+  <script>
+    let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+
+    function addTodo() {
+      const todoText = document.getElementById('newTodo').value.trim();
+      if (!todoText) { alert('Enter a todo'); return; }
+      todos.push({ text: todoText, done: false });
+      localStorage.setItem('todos', JSON.stringify(todos));
+      document.getElementById('newTodo').value = '';
+      renderTodos();
+    }
+
+    function toggleTodo(index) {
+      todos[index].done = !todos[index].done;
+      localStorage.setItem('todos', JSON.stringify(todos));
+      renderTodos();
+    }
+
+    function deleteTodo(index) {
+      todos.splice(index, 1);
+      localStorage.setItem('todos', JSON.stringify(todos));
+      renderTodos();
+    }
+
+    function clearAll() {
+      if (confirm('Clear all todos?')) {
+        todos = [];
+        localStorage.removeItem('todos');
+        renderTodos();
+      }
+    }
+
+    function renderTodos() {
+      const list = document.getElementById('todoList');
+      list.innerHTML = '';
+      todos.forEach((todo, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = \`
+          <span style="text-decoration: \${todo.done ? 'line-through' : 'none'}">\${todo.text}</span>
+          <div>
+            <button onclick="toggleTodo(\${i})">\${todo.done ? 'Undo' : 'Done'}</button>
+            <button onclick="deleteTodo(\${i})">Delete</button>
+          </div>
+        \`;
+        list.appendChild(li);
+      });
+    }
+
+    renderTodos();
+  </script>
+</body>
+</html>
